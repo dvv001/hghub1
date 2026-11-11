@@ -12,6 +12,11 @@
 const IMG_KEY = new TextEncoder().encode("f5d965df75336270");
 const IMG_IV = new TextEncoder().encode("97b60394abc2fbe1");
 const IMG_CACHE_NAME = "hg-img-v1";
+// 媒体 CDN 对部分网络环境（机房出口等）会拦截直连，SW 的上游抓取统一
+// 经自建 Cloudflare Worker 的 /proxy 中转（Worker 带浏览器请求头取源）。
+// 拦截、解密、播放列表改写仍全部在本 SW 内完成。
+const MEDIA_PROXY = "https://hghub-proxy.liguohao770801114.workers.dev/proxy?u=";
+const upUrl = (url) => MEDIA_PROXY + encodeURIComponent(url);
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
@@ -66,13 +71,13 @@ function respond(status, ctype, body, cache) {
 }
 
 async function fetchBytes(url) {
-  const resp = await fetch(url);
+  const resp = await fetch(upUrl(url));
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   return { ctype: resp.headers.get("Content-Type"), bytes: new Uint8Array(await resp.arrayBuffer()) };
 }
 
 async function fetchText(url) {
-  const resp = await fetch(url);
+  const resp = await fetch(upUrl(url));
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   return await resp.text();
 }
@@ -200,7 +205,7 @@ async function handleSeg(target, prefix, range) {
   try {
     // 带 Range 的请求（mp4 拖动等）直接透传上游响应，保留 206 语义。
     if (range) {
-      const resp = await fetch(target, { headers: { Range: range } });
+      const resp = await fetch(upUrl(target), { headers: { Range: range } });
       return resp;
     }
     const { ctype, bytes } = await fetchBytes(target);
