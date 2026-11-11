@@ -13,9 +13,13 @@
 | Rust 命令（`invoke`）发业务请求、存会话 | `src/web/tauri-core.ts` 在浏览器内复刻同一套命令：仍走上游 `/api/edge/request` 信封，会话 token 按线路存 localStorage |
 | Rust 自定义协议 `hg://localhost` 解密封面、改写 HLS | `public/hg-sw.js`（Service Worker）拦截同源 `/hg/img`、`/hg/hls`、`/hg/seg` 三个虚拟路径，做 AES 解密与播放列表改写，规则与 `src-tauri/src/media.rs` 对齐 |
 
-前提是上游接口与媒体 CDN 开放了 CORS（已实测
-`Access-Control-Allow-Origin: *`）；哪天上游收紧跨域，网页版会跟着失效，
-原生版不受影响。
+跨域现状（2026-11 实测）：媒体 CDN 的简单 GET 都带
+`Access-Control-Allow-Origin: *`，浏览器可直读；但业务接口的 CORS
+预检不返回 `Access-Control-Allow-Headers`，浏览器会拦下全部信封请求。
+因此网页版的信封请求统一经一个自建的 Cloudflare Worker 中转
+（`hghub-proxy.*.workers.dev`，代码见仓库外单独保存）：Worker 补齐
+CORS 头、带浏览器请求头转发到固定线路。哪天上游修好预检，把
+`src/web/tauri-core.ts` 里的 `WEB_PROXY` 改回直连即可；原生版不受影响。
 
 构建时靠两个开关与原生版区分（普通 `pnpm build` 永远走原生路径）：
 
