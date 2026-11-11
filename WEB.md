@@ -11,7 +11,7 @@
 | 原生版 | 网页版 |
 | --- | --- |
 | Rust 命令（`invoke`）发业务请求、存会话 | `src/web/tauri-core.ts` 在浏览器内复刻同一套命令：仍走上游 `/api/edge/request` 信封，会话 token 按线路存 localStorage |
-| Rust 自定义协议 `hg://localhost` 解密封面、改写 HLS | `public/hg-sw.js`（Service Worker）拦截同源 `/hg/img`、`/hg/hls`、`/hg/seg` 三个虚拟路径，做 AES 解密与播放列表改写，规则与 `src-tauri/src/media.rs` 对齐 |
+| Rust 自定义协议 `hg://localhost` 解密封面、改写 HLS | 自建 Cloudflare Worker 的 `/img`、`/hls`、`/seg` 三个端点：Worker 取源后做 AES 解密与播放列表改写，规则与 `src-tauri/src/media.rs` 对齐（早期用过 Service Worker 方案，因浏览器兼容问题弃用，`public/hg-sw.js` 仅留作参考） |
 
 跨域现状（2026-11 实测）：媒体 CDN 的简单 GET 都带
 `Access-Control-Allow-Origin: *`，浏览器可直读；但业务接口的 CORS
@@ -24,7 +24,7 @@ CORS 头、带浏览器请求头转发到固定线路。哪天上游修好预检
 构建时靠两个开关与原生版区分（普通 `pnpm build` 永远走原生路径）：
 
 - 环境变量 `VITE_HGWEB=1`：前端把媒体前缀从 `hg://localhost`
-  切到同源 `/hg`，并注册 Service Worker（见 `src/api.ts`、`src/main.tsx`）。
+  切到 Cloudflare Worker 的媒体端点（见 `src/api.ts`）。
 - `vite.web.config.ts`：把 `@tauri-apps/api/core` 与
   `@tauri-apps/api/window` 别名到 `src/web/` 下的网页垫片。
 
@@ -33,7 +33,7 @@ CORS 头、带浏览器请求头转发到固定线路。哪天上游修好预检
 ```bash
 pnpm install --frozen-lockfile
 pnpm web:build     # 产物在 dist-web/
-pnpm web:preview   # 本地预览（Service Worker 需要 http(s)，不能用 file:// 打开）
+pnpm web:preview   # 本地预览（需要 http(s)，不能用 file:// 打开）
 pnpm web:dev       # 开发模式
 ```
 
@@ -56,8 +56,7 @@ VITE_BASE=/hghub1/ pnpm web:build
 
 ## iPhone 上使用
 
-1. Safari 打开部署好的网址，等首页封面出来（首次打开页面会自动刷新
-   一次，这是 Service Worker 在接管，属正常现象）。
+1. Safari 打开部署好的网址，等首页封面出来。
 2. 点分享按钮 →「添加到主屏幕」，桌面上会出现 HGhub 图标，
    点开就是全屏的 App 界面。
 3. 登录、切线路都在应用内完成，与原生版一样；严格模式下登录仍只允许
