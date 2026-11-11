@@ -5,6 +5,10 @@ import { AppProvider } from "./store";
 import { invoke } from "@tauri-apps/api/core";
 import "./index.css";
 import { initPlaybackLog, installPlaybackPageEvents } from "./playbackDiagnostics";
+import { registerHgSw } from "./web/register-sw";
+
+/* 网页版：注册提供虚拟媒体协议的 Service Worker（原生构建不走这里） */
+if (import.meta.env.VITE_HGWEB === "1") registerHgSw();
 
 installPlaybackPageEvents();
 void initPlaybackLog();
