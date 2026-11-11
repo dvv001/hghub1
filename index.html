@@ -6,8 +6,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#1a1a1a" />
-    <link rel="icon" type="image/svg+xml" href="app-icon.svg" />
-    <link rel="apple-touch-icon" href="app-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/hghub1/app-icon.svg" />
+    <link rel="apple-touch-icon" href="/hghub1/app-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <title>HGhub · 黄果短剧</title>
     <script>
@@ -16,9 +16,24 @@
       } catch (e) {}
     </script>
     <style>html,body{background:#1a1a1a}html.theme-light,html.theme-light body{background:#f3f3f3}</style>
+    <script type="module">
+const PARTS = ["assets/boot/app-00.part", "assets/boot/app-01.part", "assets/boot/app-02.part", "assets/boot/app-03.part", "assets/boot/app-04.part", "assets/boot/app-05.part", "assets/boot/app-06.part", "assets/boot/app-07.part", "assets/boot/app-08.part", "assets/boot/app-09.part", "assets/boot/app-10.part"];
+try {
+  const bufs = [];
+  for (const u of PARTS) {
+    const r = await fetch(u);
+    if (!r.ok) throw new Error(u + " HTTP " + r.status);
+    bufs.push(await r.arrayBuffer());
+  }
+  await import(URL.createObjectURL(new Blob(bufs, { type: "text/javascript" })));
+} catch (e) {
+  const show = () => { document.body.innerHTML = '<div style="color:#eee;background:#1a1a1a;min-height:100vh;font-family:system-ui;padding:2rem;line-height:1.8">应用加载失败，请检查网络后刷新重试。<br><small>' + (e && e.message ? e.message : e) + '</small></div>'; };
+  if (document.body) show(); else addEventListener("DOMContentLoaded", show);
+}
+</script>
+    <link rel="stylesheet" crossorigin href="/hghub1/assets/index-BWF2A-_K.css">
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
