@@ -6,6 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "web:dev": "VITE_HGWEB=1 vite --config vite.web.config.ts",
+    "web:build": "VITE_HGWEB=1 vite build --config vite.web.config.ts",
+    "web:preview": "vite preview --config vite.web.config.ts",
     "build": "tsc --noEmit && tsc --project tsconfig.tests.json && vite build",
     "preview": "vite preview",
     "test:playback": "node scripts/test-playback.mjs",
