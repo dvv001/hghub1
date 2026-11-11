@@ -19,6 +19,11 @@ const FIXED_LINES = [
 ];
 const TRUSTED_AUTH_ORIGINS = new Set(FIXED_LINES.map((l) => l.url));
 const PUBLISH_PAGE = "https://huangguoai.pages.dev/";
+// 上游的 CORS 预检不返回 Access-Control-Allow-Headers，浏览器会拦下全部
+// 信封请求（媒体 CDN 的简单 GET 不受影响）。网页版因此统一经自建的
+// Cloudflare Worker 中转信封请求：Worker 补齐 CORS 头并转发到固定线路。
+// 线路选择、token 分桶、严格模式判断仍按逻辑线路（cur）走，不受影响。
+const WEB_PROXY = "https://hghub-proxy.liguohao770801114.workers.dev";
 const UPDATE_REPO = "Minireel/HGhub";
 const MIRROR_MAX = 60;
 
@@ -190,7 +195,7 @@ async function edge(
   return withRetry(retry, async () => {
     let resp: Response;
     try {
-      resp = await fetch(`${cur}/api/edge/request`, {
+      resp = await fetch(`${WEB_PROXY}/api/edge/request`, {
         method: "POST",
         headers: {
           Accept: "application/json",
