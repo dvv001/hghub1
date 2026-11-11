@@ -25,8 +25,15 @@ export const isMobile = isAndroid || isIos;
 /** 自定义协议地址随平台不同（见 tauri `register_asynchronous_uri_scheme_protocol` 文档）：
  *  Windows / Android → `http://<scheme>.localhost`
  *  macOS / iOS / Linux → `<scheme>://localhost`
- *  Rust 侧 `src-tauri/src/lib.rs` 里改写 m3u8 用的 scheme 必须与此一致。 */
-export const LOCAL = isMacos || isIos || isLinux ? "hg://localhost" : "http://hg.localhost";
+ *  Rust 侧 `src-tauri/src/lib.rs` 里改写 m3u8 用的 scheme 必须与此一致。
+ *  网页版（VITE_HGWEB=1 构建）没有原生协议：改走同源 Service Worker 的
+ *  虚拟路径 `<站点根>/hg`，由 public/hg-sw.js 按同样的规则处理。 */
+const WEB_LOCAL =
+  import.meta.env.VITE_HGWEB === "1"
+    ? `${window.location.origin}${(import.meta.env.BASE_URL || "/").replace(/\/?$/, "/")}hg`
+    : null;
+export const LOCAL =
+  WEB_LOCAL ?? (isMacos || isIos || isLinux ? "hg://localhost" : "http://hg.localhost");
 
 /** src 是否已是本地协议地址（避免在详情页把代理地址再包一层） */
 export const isLocalMedia = (src: string) => src.startsWith(`${LOCAL}/`);
