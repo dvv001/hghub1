@@ -26,11 +26,11 @@ export const isMobile = isAndroid || isIos;
  *  Windows / Android → `http://<scheme>.localhost`
  *  macOS / iOS / Linux → `<scheme>://localhost`
  *  Rust 侧 `src-tauri/src/lib.rs` 里改写 m3u8 用的 scheme 必须与此一致。
- *  网页版（VITE_HGWEB=1 构建）没有原生协议：改走同源 Service Worker 的
- *  虚拟路径 `<站点根>/hg`，由 public/hg-sw.js 按同样的规则处理。 */
+ *  网页版（VITE_HGWEB=1 构建）没有原生协议：改走自建 Cloudflare Worker
+ *  的 /img、/hls、/seg 端点，由 Worker 按同样的规则解密与改写。 */
 const WEB_LOCAL =
   import.meta.env.VITE_HGWEB === "1"
-    ? `${window.location.origin}${(import.meta.env.BASE_URL || "/").replace(/\/?$/, "/")}hg`
+    ? "https://hghub-proxy.liguohao770801114.workers.dev"
     : null;
 export const LOCAL =
   WEB_LOCAL ?? (isMacos || isIos || isLinux ? "hg://localhost" : "http://hg.localhost");
