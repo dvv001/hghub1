@@ -5,10 +5,8 @@ import { AppProvider } from "./store";
 import { invoke } from "@tauri-apps/api/core";
 import "./index.css";
 import { initPlaybackLog, installPlaybackPageEvents } from "./playbackDiagnostics";
-import { registerHgSw } from "./web/register-sw";
 
-/* 网页版：注册提供虚拟媒体协议的 Service Worker（原生构建不走这里） */
-if (import.meta.env.VITE_HGWEB === "1") registerHgSw();
+/* 网页版媒体层已迁至 Cloudflare Worker（见 api.ts 的 WEB_LOCAL），不再需要 Service Worker。 */
 
 installPlaybackPageEvents();
 void initPlaybackLog();
