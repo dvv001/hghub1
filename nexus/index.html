@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusAI — iOS 多智能体真实协同中枢</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#060911">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NexusAI">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+          },
+          colors: {
+            slate: {
+              850: '#111827',
+              900: '#0B0F19',
+              950: '#060911',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      background-color: #060911;
+      color: #F1F5F9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0B0F19; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    .ios-tabbar {
+      background: rgba(9, 13, 22, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(51, 65, 85, 0.65);
+    }
+    .dynamic-island {
+      background: #000000;
+      border-radius: 999px;
+      border: 1px solid rgba(71, 85, 105, 0.65);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
+      transition: all 0.25s ease;
+    }
+    .dynamic-island.active-api {
+      border-color: rgba(6, 182, 212, 0.8);
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
+    }
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .animate-pulse-slow { animation: pulse-slow 1.8s infinite ease-in-out; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center bg-slate-950 selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- iOS Mobile Frame Container (Full width on mobile, iPhone-sized centered frame on desktop) -->
+  <div class="w-full max-w-[480px] min-h-screen flex flex-col bg-[#060911] sm:border-x sm:border-slate-800/80 relative">
+
+    <!-- iOS Status Bar & Dynamic Island Header -->
+    <header class="sticky top-0 z-30 bg-[#060911]/90 backdrop-blur-xl border-b border-slate-800/80 px-4 pt-2.5 pb-2.5">
+      <div class="flex items-center justify-between text-xs font-semibold text-slate-300 mb-2">
+        <span id="iosClock" class="font-mono text-[11px]">09:41</span>
+
+        <!-- Dynamic Island Live API Capsule -->
+        <button id="dynamicIslandBtn" type="button" class="dynamic-island px-3.5 py-1 flex items-center gap-2">
+          <span id="islandDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span id="islandText" class="text-[11px] font-medium text-slate-200 truncate max-w-[170px]">待配置模型 API</span>
+        </button>
+
+        <span id="headerTokens" class="font-mono text-[11px] text-cyan-400">0 tok</span>
+      </div>
+
+      <!-- Brand & Quick Settings Row -->
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-sm font-bold text-white">NexusAI 协同中枢</h1>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">iOS 真实API版</span>
+            </div>
+            <p id="subHeaderStatus" class="text-[11px] text-slate-400">零虚拟演示 · 100% 真实大模型驱动</p>
+          </div>
+        </div>
+
+        <button id="topConfigApiBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">
+          ⚙️ 配API
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Viewport -->
+    <main class="flex-1 px-3.5 py-3 space-y-3 pb-24">
+
+      <!-- ==================== TAB 1: WORKSPACE (协同工作台) ==================== -->
+      <section id="tabViewWorkspace" class="space-y-3">
+
+        <!-- Unconfigured API Alert Banner -->
+        <div id="apiAlertBanner" class="glass-panel rounded-2xl p-3 border border-amber-500/40 bg-amber-500/10 flex items-center justify-between gap-2">
+          <div class="text-xs text-amber-200 leading-relaxed">
+            <strong class="text-amber-300">尚未填写 API Key：</strong>本版本已去除全部虚拟演示，请先填入模型 API Key 以启动真实任务。
+          </div>
+          <button id="bannerConfigBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shrink-0">
+            去配置
+          </button>
+        </div>
+
+        <!-- Mission Input Card -->
+        <div class="glass-panel rounded-2xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-slate-200">🎯 派发真实多智能体任务</span>
+            <select id="sampleTaskSelect" aria-label="预设真实任务模板" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500">
+              <option value="">💡 选填测试任务...</option>
+              <option value="设计一套高并发秒杀防超卖系统架构，编写核心 Redis Lua 扣减库存代码，并输出安全边界审计清单">⚡ 高并发秒杀架构+代码+审计</option>
+              <option value="设计一款 iOS 个人 AI 语音笔记 App 的产品架构、核心数据表结构、SwiftUI 录音转写关键代码及商业化方案">📱 iOS AI 语音笔记 App 全案</option>
+              <option value="构建多因子量化选股回测框架，推导夏普比率与最大回撤计算公式，并给出核心 Python 向量化回测代码">📊 量化选股策略与 Python 代码</option>
+            </select>
+          </div>
+
+          <textarea id="missionTextarea" rows="3" placeholder="输入您要让智能体集群真实执行的任务（如：系统设计、代码编写、深度调研、安全审计）..." class="w-full bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none leading-relaxed"></textarea>
+
+          <div class="flex items-center justify-between gap-2 pt-0.5">
+            <select id="execModeSelect" aria-label="执行链路模式" class="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-2 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500">
+              <option value="all">全编队深度协同 (全部启用节点)</option>
+              <option value="fast">精简快速协同 (前3个启用节点)</option>
+            </select>
+
+            <div class="flex items-center gap-1.5 flex-1 justify-end">
+              <button id="abortMissionBtn" type="button" class="hidden px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white transition">
+                ⏹ 停止执行
+              </button>
+              <button id="runMissionBtn" type="button" class="flex-1 max-w-[180px] px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-md shadow-cyan-500/20 transition">
+                🚀 启动真实协同
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real Telemetry Metrics -->
+        <div class="grid grid-cols-3 gap-2">
+          <div class="glass-panel rounded-xl p-2.5 text-center">
+            <div class="text-[10px] text-slate-400">已完成节点</div>
+            <div class="text-xs font-mono font-bold text-cyan-400 mt-0.5"><span id="kpiDoneAgents">0</span> / <span id="kpiEnabledAgents">5</span></div>
+          </div>
+          <div class="glass-panel rounded-xl p-2.5 text-center">
+            <div class="text-[10px] text-slate-400">真实消耗 Token</div>
+            <div id="kpiRealTokens" class="text-xs font-mono font-bold text-indigo-400 mt-0.5">0</div>
+          </div>
+          <div class="glass-panel rounded-xl p-2.5 text-center">
+            <div class="text-[10px] text-slate-400">累计接口耗时</div>
+            <div id="kpiRealLatency" class="text-xs font-mono font-bold text-emerald-400 mt-0.5">0.0s</div>
+          </div>
+        </div>
+
+        <!-- Agent Pipeline List -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-0.5">
+            <h2 class="text-xs font-bold text-slate-300">⚡ 智能体实时执行流水线 (点击卡片查看或追问)</h2>
+            <button id="showReportModalBtn" type="button" class="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300">
+              📑 完整报告 & 导出
+            </button>
+          </div>
+          <div id="pipelineAgentCards" class="space-y-2">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Real A2A Bus Logs -->
+        <div class="glass-panel rounded-2xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+              真实 API 调度总线日志
+            </span>
+            <button id="clearLogBtn" type="button" class="text-[11px] text-slate-400 hover:text-slate-200">清空</button>
+          </div>
+          <div id="busLogBox" class="space-y-1.5 max-h-40 overflow-y-auto font-mono text-[11px] text-slate-300">
+            <div class="text-slate-500 text-[11px]">系统待命中。无任何模拟数据，派发任务后将记录真实 API 请求...</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==================== TAB 2: TOPOLOGY (实时拓扑网络) ==================== -->
+      <section id="tabViewTopology" class="hidden space-y-3">
+        <div class="glass-panel rounded-2xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h2 class="text-xs font-bold text-white">🕸️ 多智能体真实神经拓扑</h2>
+              <p class="text-[11px] text-slate-400">仅在真实 API 调用与流式返回期间激活节点脉冲，点击节点查看产出</p>
+            </div>
+            <span id="topoStateBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300">IDLE</span>
+          </div>
+          <div id="stageCanvasWrap" class="relative w-full h-[420px] rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+            <canvas id="stageCanvas" class="w-full h-full block cursor-pointer"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: AGENTS (智能体编队与Prompt) ==================== -->
+      <section id="tabViewAgents" class="hidden space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <div>
+            <h2 class="text-xs font-bold text-white">🤖 智能体角色与 System Prompt 配置</h2>
+            <p class="text-[11px] text-slate-400">可自由启停节点或自定义每个 Agent 的系统提示词</p>
+          </div>
+          <button id="openNewAgentBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition">
+            ＋ 新增 Agent
+          </button>
+        </div>
+        <div id="agentConfigContainer" class="space-y-2.5">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ==================== TAB 4: SETTINGS (API引擎配置) ==================== -->
+      <section id="tabViewSettings" class="hidden space-y-3">
+        <div class="glass-panel rounded-2xl p-4 space-y-3">
+          <div>
+            <h2 class="text-sm font-bold text-white">⚙️ 模型 API 引擎设置</h2>
+            <p class="text-[11px] text-slate-400 mt-0.5">支持所有兼容 OpenAI 接口标准的大模型服务商，密钥仅保存在您本地浏览器</p>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1.5">一键选择服务商预设：</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" data-preset="deepseek" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-left">
+                🚀 DeepSeek 官方
+              </button>
+              <button type="button" data-preset="siliconflow" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
+                ⚡ 硅基流动 SiliconFlow
+              </button>
+              <button type="button" data-preset="qwen" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
+                ☁️ 阿里百炼 (通义千问)
+              </button>
+              <button type="button" data-preset="openai" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
+                🌐 OpenAI 官方 / 中转
+              </button>
+              <button type="button" data-preset="kimi" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
+                🌙 月之暗面 Kimi
+              </button>
+              <button type="button" data-preset="gemini" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
+                ✨ Google Gemini
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgBaseUrl">接口地址 (Endpoint URL)</label>
+            <input id="cfgBaseUrl" type="url" value="https://api.deepseek.com/v1/chat/completions" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgApiKey">API Key (必填)</label>
+            <input id="cfgApiKey" type="password" placeholder="sk-..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgModel">模型名称 (Model)</label>
+              <input id="cfgModel" type="text" value="deepseek-chat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgTemp">温度 (Temperature)</label>
+              <input id="cfgTemp" type="number" step="0.05" min="0" max="1.5" value="0.3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+            </div>
+          </div>
+
+          <div class="pt-1">
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input id="cfgStream" type="checkbox" checked class="rounded border-slate-700 text-cyan-500">
+              <span>启用 SSE 实时流式输出 (边思考边实时显示内容)</span>
+            </label>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2">
+            <button id="saveCfgBtn" type="button" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition">
+              💾 保存配置
+            </button>
+            <button id="testCfgBtn" type="button" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition">
+              🔌 测试 API 连通性
+            </button>
+          </div>
+
+          <div id="testResultBanner" class="hidden rounded-xl p-3 text-xs font-mono leading-relaxed border"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- iOS Bottom Tab Bar -->
+    <nav class="ios-tabbar sticky bottom-0 z-30 px-2 py-2 flex items-center justify-around">
+      <button type="button" data-nav="workspace" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-cyan-400">
+        <span class="text-base leading-none">⚡</span>
+        <span class="text-[10px] font-semibold mt-1">协同工作台</span>
+      </button>
+      <button type="button" data-nav="topology" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
+        <span class="text-base leading-none">🕸️</span>
+        <span class="text-[10px] font-semibold mt-1">实时拓扑</span>
+      </button>
+      <button type="button" data-nav="agents" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
+        <span class="text-base leading-none">🤖</span>
+        <span class="text-[10px] font-semibold mt-1">智能体配置</span>
+      </button>
+      <button type="button" data-nav="settings" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
+        <span class="text-base leading-none">⚙️</span>
+        <span class="text-[10px] font-semibold mt-1">API设置</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- Modal 1: Agent Real Output & Direct 1-on-1 Follow-up Sheet -->
+  <div id="agentInspectorModal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-sm p-0 sm:p-4">
+    <div class="glass-panel w-full max-w-[460px] rounded-t-3xl sm:rounded-3xl p-4 border border-slate-700 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span id="modalAgIcon" class="text-xl">🧠</span>
+          <div>
+            <h3 id="modalAgName" class="text-sm font-bold text-white">Nexus-01 架构总控</h3>
+            <p id="modalAgRole" class="text-[11px] text-slate-400">全局任务拆解与技术纲要</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button id="copyAgOutBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] bg-slate-800 text-cyan-300">复制产出</button>
+          <button id="closeAgModalBtn" type="button" class="px-2.5 py-1 rounded-lg text-xs bg-slate-800 text-slate-300">✕</button>
+        </div>
+      </div>
+
+      <div id="modalAgOutput" class="flex-1 overflow-y-auto my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed min-h-[200px]">
+      </div>
+
+      <form id="directChatForm" class="flex items-center gap-2 pt-1">
+        <input id="directChatInput" type="text" required placeholder="向该 Agent 追问或发送单独指令 (真实调用API)..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+        <button type="submit" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 shrink-0">
+          发送
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Full Deliverable Report & Export -->
+  <div id="reportModal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-sm p-0 sm:p-4">
+    <div class="glass-panel w-full max-w-[460px] rounded-t-3xl sm:rounded-3xl p-4 border border-slate-700 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-sm font-bold text-white">📑 多智能体真实交付汇总报告</h3>
+        <div class="flex items-center gap-1.5">
+          <button id="copyReportBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] bg-slate-800 text-cyan-300">复制全文</button>
+          <button id="downloadReportBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] bg-cyan-500 text-slate-950 font-bold">下载 .md</button>
+          <button id="closeReportModalBtn" type="button" class="px-2.5 py-1 rounded-lg text-xs bg-slate-800 text-slate-300">✕</button>
+        </div>
+      </div>
+      <div id="reportModalContent" class="flex-1 overflow-y-auto my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed min-h-[220px]">
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Spawn New Custom Agent -->
+  <div id="newAgentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="glass-panel w-full max-w-[400px] rounded-3xl p-4 border border-slate-700 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white">＋ 新增专职智能体节点</h3>
+        <button id="closeNewAgentModalBtn" type="button" class="text-slate-400 hover:text-white text-xs px-2 py-1">✕</button>
+      </div>
+      <form id="newAgentForm" class="space-y-2.5">
+        <div>
+          <label class="block text-[11px] text-slate-300 mb-1" for="addAgName">智能体名称</label>
+          <input id="addAgName" type="text" required placeholder="例如：Product-06 产品专家" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-[11px] text-slate-300 mb-1" for="addAgRole">职责描述</label>
+          <input id="addAgRole" type="text" required placeholder="例如：交互体验与商业化方案设计" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-[11px] text-slate-300 mb-1" for="addAgPrompt">System Prompt (系统提示词)</label>
+          <textarea id="addAgPrompt" rows="3" required placeholder="你是资深产品总监，请基于上游结论输出用户体验流程与商业化闭环方案..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button id="cancelNewAgentBtn" type="button" class="px-3.5 py-1.5 rounded-xl text-xs bg-slate-800 text-slate-300">取消</button>
+          <button type="submit" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950">添加</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Banner -->
+  <div id="toastBanner" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-2 bg-slate-900/95 border border-cyan-500/50 text-slate-100 px-4 py-2 rounded-full shadow-xl text-xs">
+    <span class="text-cyan-400">✔</span>
+    <span id="toastText">已保存</span>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. REAL API CONFIGURATION & PROVIDER PRESETS (ZERO FAKE SIMULATION)
+    // =========================================================================
+    const PROVIDER_PRESETS = {
+      deepseek: {
+        name: 'DeepSeek 官方',
+        baseUrl: 'https://api.deepseek.com/v1/chat/completions',
+        model: 'deepseek-chat'
+      },
+      siliconflow: {
+        name: '硅基流动 SiliconFlow',
+        baseUrl: 'https://api.siliconflow.cn/v1/chat/completions',
+        model: 'deepseek-ai/DeepSeek-V3'
+      },
+      qwen: {
+        name: '阿里百炼 (通义千问)',
+        baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+        model: 'qwen-plus'
+      },
+      openai: {
+        name: 'OpenAI 官方',
+        baseUrl: 'https://api.openai.com/v1/chat/completions',
+        model: 'gpt-4o-mini'
+      },
+      kimi: {
+        name: '月之暗面 Kimi',
+        baseUrl: 'https://api.moonshot.cn/v1/chat/completions',
+        model: 'moonshot-v1-32k'
+      },
+      gemini: {
+        name: 'Google Gemini',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        model: 'gemini-2.5-flash'
+      }
+    };
+
+    const apiSettings = {
+      baseUrl: 'https://api.deepseek.com/v1/chat/completions',
+      apiKey: '',
+      model: 'deepseek-chat',
+      temperature: 0.3,
+      stream: true
+    };
+
+    try {
+      const saved = localStorage.getItem('nexusai_ios_real_cfg');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.baseUrl) apiSettings.baseUrl = parsed.baseUrl;
+        if (parsed.apiKey) apiSettings.apiKey = parsed.apiKey;
+        if (parsed.model) apiSettings.model = parsed.model;
+        if (typeof parsed.temperature === 'number') apiSettings.temperature = parsed.temperature;
+        if (typeof parsed.stream === 'boolean') apiSettings.stream = parsed.stream;
+      }
+    } catch (e) {}
+
+    // =========================================================================
+    // 2. REAL MULTI-AGENT FLEET (ALL START IDLE, NO FAKE PROGRESS)
+    // =========================================================================
+    const agents = [
+      {
+        id: 'agent-1',
+        name: 'Nexus-01 架构总控',
+        shortName: '总控',
+        role: '全局任务拆解与技术纲要',
+        icon: '🧠',
+        color: '#06B6D4',
+        enabled: true,
+        status: 'idle', // idle | running | done | error
+        output: '',
+        latencyMs: 0,
+        tokens: 0,
+        systemPrompt: '你是 Nexus-01 架构总控智能体。请针对用户提交的任务，输出清晰的结构化拆解方案、核心架构设计原则以及各子模块的协作边界。请直接给出专业干货。'
+      },
+      {
+        id: 'agent-2',
+        name: 'Research-02 深度调研',
+        shortName: '调研',
+        role: '技术选型对比与行业基准',
+        icon: '🔎',
+        color: '#F59E0B',
+        enabled: true,
+        status: 'idle',
+        output: '',
+        latencyMs: 0,
+        tokens: 0,
+        systemPrompt: '你是 Research-02 深度调研智能体。请结合用户的原始需求与总控架构方案，给出具体的技术栈选型对比、核心算法/协议分析及行业最佳实践参数。'
+      },
+      {
+        id: 'agent-3',
+        name: 'Coder-03 核心研发',
+        shortName: '研发',
+        role: '核心模块代码与接口实现',
+        icon: '💻',
+        color: '#6366F1',
+        enabled: true,
+        status: 'idle',
+        output: '',
+        latencyMs: 0,
+        tokens: 0,
+        systemPrompt: '你是 Coder-03 核心研发智能体。请根据上游的总控架构与技术选型，编写关键生产级代码实现（含清晰注释、数据结构定义与核心处理逻辑）。'
+      },
+      {
+        id: 'agent-4',
+        name: 'SecOps-04 安全与压测',
+        shortName: '安全',
+        role: '漏洞审计、并发瓶颈与加固',
+        icon: '🛡️',
+        color: '#10B981',
+        enabled: true,
+        status: 'idle',
+        output: '',
+        latencyMs: 0,
+        tokens: 0,
+        systemPrompt: '你是 SecOps-04 安全审计与高并发压测智能体。请严格审查上游的架构与代码，指出潜在的并发竞争、安全漏洞或异常边界，并提供具体的修复加固方案与验证清单。'
+      },
+      {
+        id: 'agent-5',
+        name: 'Memory-05 交付中枢',
+        shortName: '汇总',
+        role: '全局整合与落地执行蓝图',
+        icon: '📑',
+        color: '#EC4899',
+        enabled: true,
+        status: 'idle',
+        output: '',
+        latencyMs: 0,
+        tokens: 0,
+        systemPrompt: '你是 Memory-05 交付汇总智能体。请将前面所有智能体的关键结论、核心架构、代码要点与安全准则汇总为一份条理清晰、可立即落地的执行蓝图。'
+      }
+    ];
+
+    let isExecuting = false;
+    let abortCtrl = null;
+    let cumulativeTokens = 0;
+    let cumulativeLatencyMs = 0;
+    let inspectedAgentId = 'agent-1';
+    let activePackets = [];
+
+    // =========================================================================
+    // 3. UI RENDERING & STATE SYNC
+    // =========================================================================
+    function showToast(msg) {
+      const banner = document.getElementById('toastBanner');
+      document.getElementById('toastText').textContent = msg;
+      banner.classList.remove('hidden');
+      banner.classList.add('flex');
+      clearTimeout(banner._timer);
+      banner._timer = setTimeout(() => {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      }, 2500);
+    }
+
+    function appendLog(tag, text, color) {
+      const box = document.getElementById('busLogBox');
+      if (box.children.length === 1 && box.children[0].classList.contains('text-slate-500')) {
+        box.innerHTML = '';
+      }
+      const time = new Date().toTimeString().slice(0, 8);
+      const item = document.createElement('div');
+      item.className = 'border-l-2 pl-2 py-0.5 leading-snug';
+      item.style.borderColor = color || '#06B6D4';
+      item.innerHTML = `<span class="text-cyan-400">[${time}] ${tag}</span> <span class="text-slate-200">${text}</span>`;
+      box.prepend(item);
+    }
+
+    function syncHeaderAndMetrics() {
+      const hasKey = Boolean(apiSettings.apiKey && apiSettings.apiKey.trim());
+      const alertBanner = document.getElementById('apiAlertBanner');
+      const island = document.getElementById('dynamicIslandBtn');
+      const dot = document.getElementById('islandDot');
+      const islandTxt = document.getElementById('islandText');
+      const subStatus = document.getElementById('subHeaderStatus');
+
+      if (hasKey) {
+        alertBanner.classList.add('hidden');
+      } else {
+        alertBanner.classList.remove('hidden');
+      }
+
+      if (isExecuting) {
+        island.classList.add('active-api');
+        dot.className = 'w-2 h-2 rounded-full bg-cyan-400 animate-pulse-slow';
+        const runningAg = agents.find(a => a.status === 'running');
+        islandTxt.textContent = runningAg ? `${runningAg.shortName} 正在请求 API...` : '正在调用 API...';
+      } else if (hasKey) {
+        island.classList.remove('active-api');
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        islandTxt.textContent = `已就绪 · ${apiSettings.model}`;
+      } else {
+        island.classList.remove('active-api');
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        islandTxt.textContent = '待配置模型 API';
+      }
+
+      subStatus.textContent = hasKey
+        ? `当前引擎: ${apiSettings.model} · 100% 真实调用`
+        : '零虚拟演示 · 100% 真实大模型驱动';
+
+      document.getElementById('headerTokens').textContent = `${cumulativeTokens} tok`;
+      document.getElementById('kpiRealTokens').textContent = cumulativeTokens.toLocaleString();
+      document.getElementById('kpiRealLatency').textContent = `${(cumulativeLatencyMs / 1000).toFixed(1)}s`;
+
+      const enabledList = agents.filter(a => a.enabled);
+      const doneList = enabledList.filter(a => a.status === 'done');
+      document.getElementById('kpiDoneAgents').textContent = String(doneList.length);
+      document.getElementById('kpiEnabledAgents').textContent = String(enabledList.length);
+
+      const topoBadge = document.getElementById('topoStateBadge');
+      if (isExecuting) {
+        topoBadge.textContent = 'API STREAMING';
+        topoBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+      } else {
+        topoBadge.textContent = hasKey ? 'READY' : 'UNCONFIGURED';
+        topoBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300';
+      }
+    }
+
+    function renderPipelineCards() {
+      const container = document.getElementById('pipelineAgentCards');
+      const enabledList = agents.filter(a => a.enabled);
+
+      container.innerHTML = enabledList.map((ag, idx) => {
+        let badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400">待命</span>`;
+        let borderCls = 'border-slate-800/80';
+
+        if (ag.status === 'running') {
+          badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 animate-pulse-slow">● API 推理中...</span>`;
+          borderCls = 'border-cyan-500/70 shadow-md shadow-cyan-500/10';
+        } else if (ag.status === 'done') {
+          badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✔ 已完成 (${(ag.latencyMs / 1000).toFixed(1)}s)</span>`;
+          borderCls = 'border-emerald-500/40';
+        } else if (ag.status === 'error') {
+          badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40">✕ 异常</span>`;
+          borderCls = 'border-rose-500/50';
+        }
+
+        const safeSnippet = ag.output
+          ? ag.output.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 160) + (ag.output.length > 160 ? '...' : '')
+          : '';
+
+        return `
+          <div data-card-agent="${ag.id}" class="glass-panel rounded-2xl p-3 border ${borderCls} cursor-pointer transition hover:border-cyan-500/50">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style="background:${ag.color}20; border:1px solid ${ag.color}55;">
+                  ${ag.icon}
+                </div>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-white truncate">${idx + 1}. ${ag.name}</div>
+                  <div class="text-[11px] text-slate-400 truncate">${ag.role}</div>
+                </div>
+              </div>
+              <div class="shrink-0">${badge}</div>
+            </div>
+            ${safeSnippet ? `<div class="mt-2 p-2 rounded-xl bg-slate-950/90 border border-slate-800/80 font-mono text-[11px] text-slate-300 leading-relaxed">${safeSnippet}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      container.querySelectorAll('[data-card-agent]').forEach(card => {
+        card.addEventListener('click', () => {
+          openAgentModal(card.getAttribute('data-card-agent'));
+        });
+      });
+    }
+
+    function renderAgentSettings() {
+      const container = document.getElementById('agentConfigContainer');
+      container.innerHTML = agents.map((ag) => `
+        <div class="glass-panel rounded-2xl p-3.5 space-y-2 border border-slate-800">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">${ag.icon}</span>
+              <div>
+                <div class="text-xs font-bold text-white">${ag.name}</div>
+                <div class="text-[11px] text-slate-400">${ag.role}</div>
+              </div>
+            </div>
+            <button type="button" data-toggle-id="${ag.id}" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold ${ag.enabled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}">
+              ${ag.enabled ? '已启用' : '已停用'}
+            </button>
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 mb-1">System Prompt (真实请求时注入该角色的系统指令)：</label>
+            <textarea data-prompt-id="${ag.id}" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">${ag.systemPrompt}</textarea>
+          </div>
+        </div>
+      `).join('');
+
+      container.querySelectorAll('[data-toggle-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-toggle-id');
+          const ag = agents.find(a => a.id === id);
+          if (!ag) return;
+          if (ag.enabled && agents.filter(a => a.enabled).length <= 1) {
+            showToast('至少需保留 1 个启用的智能体');
+            return;
+          }
+          ag.enabled = !ag.enabled;
+          renderAgentSettings();
+          renderPipelineCards();
+          syncHeaderAndMetrics();
+        });
+      });
+
+      container.querySelectorAll('[data-prompt-id]').forEach(area => {
+        area.addEventListener('change', () => {
+          const id = area.getAttribute('data-prompt-id');
+          const ag = agents.find(a => a.id === id);
+          if (ag) {
+            ag.systemPrompt = area.value.trim();
+            showToast(`已更新 ${ag.shortName} 的系统提示词`);
+          }
+        });
+      });
+    }
+
+// =========================================================================
+// 4. REAL LLM API ENGINE (STREAMING & STANDARD FETCH)
+// =========================================================================
+async function requestLLM({ systemPrompt, userPrompt, onStreamUpdate, signal}) {
+const endpoint = apiSettings.baseUrl.trim();
+const key = apiSettings.apiKey.trim();
+const model = apiSettings.model.trim();
+
+if (!key) {
+throw new Error('未填写 API Key，请先在「API设置」中配置密钥');
+}
+
+const startTime = performance.now();
+const useStream = Boolean(apiSettings.stream && onStreamUpdate);
+
+const response = await fetch(endpoint, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${key}`
+},
+body: JSON.stringify({
+model,
+temperature: Number(apiSettings.temperature) || 0.3,
+stream: useStream,
+messages: [
+{ role: 'system', content: systemPrompt},
+{ role: 'user', content: userPrompt}
+]
+}),
+signal
+});
+
+if (!response.ok) {
+let errMsg = `HTTP ${response.status}`;
+try {
+const errData = await response.json();
+errMsg = errData?.error?.message || JSON.stringify(errData);
+} catch (e) {
+try { errMsg = await response.text();} catch (_) {}
+}
+throw new Error(errMsg);
+}
+
+if (useStream && response.body && typeof response.body.getReader === 'function') {
+const reader = response.body.getReader();
+const decoder = new TextDecoder('utf-8');
+let fullContent = '';
+let buffer = '';
+
+while (true) {
+const { done, value} = await reader.read();
+if (done) break;
+buffer += decoder.decode(value, { stream: true});
+const lines = buffer.split('\n');
+buffer = lines.pop() || '';
+
+for (const raw of lines) {
+const line = raw.trim();
+if (!line ||!line.startsWith('data:')) continue;
+const payload = line.slice(5).trim();
+if (payload === '[DONE]') continue;
+try {
+const parsed = JSON.parse(payload);
+const delta = parsed?.choices?.[0]?.delta?.content || parsed?.choices?.[0]?.delta?.reasoning_content || '';
+if (delta) {
+fullContent += delta;
+onStreamUpdate(fullContent);
+}
+} catch (_) {}
+}
+}
+
+const elapsed = Math.round(performance.now() - startTime);
+const estTokens = Math.max(1, Math.ceil((systemPrompt.length + userPrompt.length + fullContent.length) / 3));
+return { content: fullContent, latencyMs: elapsed, tokens: estTokens};
+}
+
+const data = await response.json();
+const content = data?.choices?.[0]?.message?.content || '';
+if (onStreamUpdate) onStreamUpdate(content);
+const elapsed = Math.round(performance.now() - startTime);
+const tokens = data?.usage?.total_tokens || Math.max(1, Math.ceil((systemPrompt.length + userPrompt.length + content.length) / 3));
+return { content, latencyMs: elapsed, tokens};
+}
+
+function spawnRealPacket(fromId, toId, color) {
+activePackets.push({ fromId, toId, progress: 0, color: color || '#06B6D4'});
+}
+
+async function startRealPipeline() {
+const taskText = document.getElementById('missionTextarea').value.trim();
+if (!taskText) {
+showToast('请先输入要执行的真实任务内容');
+document.getElementById('missionTextarea').focus();
+return;
+}
+
+if (!apiSettings.apiKey.trim()) {
+showToast('请先在「API设置」中填写 API Key');
+switchNavTab('settings');
+document.getElementById('cfgApiKey').focus();
+return;
+}
+
+const mode = document.getElementById('execModeSelect').value;
+let runList = agents.filter(a => a.enabled);
+if (mode === 'fast' && runList.length > 3) {
+runList = runList.slice(0, 3);
+}
+
+agents.forEach(a => {
+a.status = 'idle';
+a.output = '';
+a.latencyMs = 0;
+a.tokens = 0;
+});
+
+isExecuting = true;
+abortCtrl = new AbortController();
+document.getElementById('runMissionBtn').classList.add('hidden');
+document.getElementById('abortMissionBtn').classList.remove('hidden');
+
+renderPipelineCards();
+syncHeaderAndMetrics();
+appendLog('MISSION', `启动真实任务：「${taskText.slice(0, 32)}...」`, '#06B6D4');
+
+let sharedContext = `：\n${taskText}\n`;
+
+for (let i = 0; i < runList.length; i++) {
+if (!isExecuting) break;
+const ag = runList[i];
+ag.status = 'running';
+renderPipelineCards();
+syncHeaderAndMetrics();
+
+spawnRealPacket(runList[0].id, ag.id, ag.color);
+appendLog('API_REQ', `${ag.name} 正在请求 ${apiSettings.model}...`, ag.color);
+
+const promptForAgent = i === 0
+? `请针对以下用户任务，输出清晰的全局拆解方案与核心技术路线：\n\n${taskText}`
+: `以下是用户原始任务及上游智能体已完成的产出，请以你的专业身份（${ag.name} - ${ag.role}）继续推进并输出你的核心交付成果：\n\n${sharedContext}`;
+
+try {
+const pktTimer = setInterval(() => {
+if (ag.status === 'running') {
+spawnRealPacket(runList[0].id, ag.id, ag.color);
+}
+}, 850);
+
+const res = await requestLLM({
+systemPrompt: ag.systemPrompt,
+userPrompt: promptForAgent,
+signal: abortCtrl.signal,
+onStreamUpdate: (partial) => {
+ag.output = partial;
+renderPipelineCards();
+if (inspectedAgentId === ag.id &&!document.getElementById('agentInspectorModal').classList.contains('hidden')) {
+document.getElementById('modalAgOutput').textContent = partial;
+}
+}
+});
+
+clearInterval(pktTimer);
+ag.status = 'done';
+ag.output = res.content;
+ag.latencyMs = res.latencyMs;
+ag.tokens = res.tokens;
+cumulativeTokens += res.tokens;
+cumulativeLatencyMs += res.latencyMs;
+
+sharedContext += `\n\n====================\n：\n${res.content}\n`;
+spawnRealPacket(ag.id, runList[0].id, '#10B981');
+appendLog('API_DONE', `${ag.name} 完成 (${(res.latencyMs / 1000).toFixed(1)}s · ${res.tokens} tok)`, '#10B981');
+
+renderPipelineCards();
+syncHeaderAndMetrics();
+} catch (err) {
+if (err.name === 'AbortError') {
+ag.status = 'idle';
+appendLog('ABORT', `已手动中止 ${ag.name} 的请求`, '#F59E0B');
+} else {
+ag.status = 'error';
+ag.output = `：${err.message}`;
+appendLog('ERROR', `${ag.name} 报错：${err.message}`, '#EF4444');
+showToast(`调用失败：${err.message}`);
+}
+renderPipelineCards();
+syncHeaderAndMetrics();
+break;
+}
+}
+
+isExecuting = false;
+abortCtrl = null;
+document.getElementById('abortMissionBtn').classList.add('hidden');
+document.getElementById('runMissionBtn').classList.remove('hidden');
+syncHeaderAndMetrics();
+}
+
+    // =========================================================================
+    // 5. REAL-TIME TOPOLOGY CANVAS
+    // =========================================================================
+    const canvas = document.getElementById('stageCanvas');
+    const ctx = canvas.getContext('2d');
+    let cw = 360;
+    let ch = 420;
+    let tick = 0;
+
+    function resizeStageCanvas() {
+      const wrap = document.getElementById('stageCanvasWrap');
+      if (!wrap) return;
+      const rect = wrap.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      cw = rect.width;
+      ch = rect.height;
+      canvas.width = cw * dpr;
+      canvas.height = ch * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function computeNodeCoords() {
+      const enabled = agents.filter(a => a.enabled);
+      const map = {};
+      if (enabled.length === 0) return map;
+      const cx = cw * 0.5;
+      const cy = ch * 0.5;
+      map[enabled[0].id] = { x: cx, y: cy, agent: enabled[0], hub: true };
+      const outer = enabled.length - 1;
+      const r = Math.min(cw, ch) * 0.34;
+      for (let i = 1; i < enabled.length; i++) {
+        const angle = ((i - 1) / Math.max(1, outer)) * Math.PI * 2 - Math.PI / 2;
+        map[enabled[i].id] = {
+          x: cx + Math.cos(angle) * r,
+          y: cy + Math.sin(angle) * r,
+          agent: enabled[i],
+          hub: false
+        };
+      }
+      return map;
+    }
+
+    function renderTopologyLoop() {
+      tick++;
+      ctx.fillStyle = '#060911';
+      ctx.fillRect(0, 0, cw, ch);
+
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < cw; x += 32) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, ch);
+        ctx.stroke();
+      }
+      for (let y = 0; y < ch; y += 32) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(cw, y);
+        ctx.stroke();
+      }
+
+      const nodes = computeNodeCoords();
+      const ids = Object.keys(nodes);
+      if (ids.length > 0) {
+        const hub = nodes[ids[0]];
+        for (let i = 1; i < ids.length; i++) {
+          const pt = nodes[ids[i]];
+          const running = pt.agent.status === 'running';
+          const done = pt.agent.status === 'done';
+          ctx.beginPath();
+          ctx.moveTo(hub.x, hub.y);
+          ctx.lineTo(pt.x, pt.y);
+          ctx.strokeStyle = running ? pt.agent.color : done ? 'rgba(16, 185, 129, 0.45)' : 'rgba(51, 65, 85, 0.55)';
+          ctx.lineWidth = running ? 2.2 : 1.2;
+          ctx.stroke();
+        }
+
+        for (let i = activePackets.length - 1; i >= 0; i--) {
+          const pkt = activePackets[i];
+          const p1 = nodes[pkt.fromId];
+          const p2 = nodes[pkt.toId];
+          if (!p1 || !p2) {
+            activePackets.splice(i, 1);
+            continue;
+          }
+          pkt.progress += 0.03;
+          if (pkt.progress >= 1) {
+            activePackets.splice(i, 1);
+            continue;
+          }
+          const px = p1.x + (p2.x - p1.x) * pkt.progress;
+          const py = p1.y + (p2.y - p1.y) * pkt.progress;
+          ctx.beginPath();
+          ctx.arc(px, py, 5, 0, Math.PI * 2);
+          ctx.fillStyle = pkt.color;
+          ctx.shadowColor = pkt.color;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        ids.forEach((id) => {
+          const { x, y, agent, hub: isHub } = nodes[id];
+          const rad = isHub ? 28 : 22;
+
+          if (agent.status === 'running') {
+            const pr = rad + 5 + (tick % 28) * 0.35;
+            ctx.beginPath();
+            ctx.arc(x, y, pr, 0, Math.PI * 2);
+            ctx.strokeStyle = agent.color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+
+          ctx.beginPath();
+          ctx.arc(x, y, rad, 0, Math.PI * 2);
+          ctx.fillStyle = '#0F172A';
+          ctx.fill();
+          ctx.strokeStyle = agent.status === 'done' ? '#10B981' : agent.status === 'running' ? agent.color : '#475569';
+          ctx.lineWidth = agent.status === 'running' ? 3 : 2;
+          ctx.stroke();
+
+          ctx.font = isHub ? '17px sans-serif' : '14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(agent.icon, x, y + 1);
+
+          ctx.font = '600 11px Inter, sans-serif';
+          ctx.fillStyle = '#F8FAFC';
+          ctx.fillText(agent.shortName, x, y + rad + 13);
+
+          const stTxt = agent.status === 'running' ? 'API推理中' : agent.status === 'done' ? '已完成' : agent.status === 'error' ? '异常' : '待命';
+          ctx.font = '500 9.5px monospace';
+          ctx.fillStyle = agent.status === 'done' ? '#10B981' : agent.status === 'running' ? '#06B6D4' : '#64748B';
+          ctx.fillText(stTxt, x, y + rad + 25);
+        });
+      }
+
+      requestAnimationFrame(renderTopologyLoop);
+    }
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const nodes = computeNodeCoords();
+      for (const id of Object.keys(nodes)) {
+        const pt = nodes[id];
+        if (Math.hypot(x - pt.x, y - pt.y) <= 32) {
+          openAgentModal(id);
+          break;
+        }
+      }
+    });
+
+    // =========================================================================
+    // 6. MODALS, FOLLOW-UP CHAT, EXPORT & NAVIGATION
+    // =========================================================================
+    function openAgentModal(agentId) {
+      const ag = agents.find(a => a.id === agentId);
+      if (!ag) return;
+      inspectedAgentId = ag.id;
+      document.getElementById('modalAgIcon').textContent = ag.icon;
+      document.getElementById('modalAgName').textContent = ag.name;
+      document.getElementById('modalAgRole').textContent = ag.role;
+      document.getElementById('modalAgOutput').textContent =
+        ag.output || '该智能体当前处于待命状态，尚无输出。\n\n您可以在「协同工作台」启动全局任务，或直接在下方输入框向该 Agent 发送真实指令。';
+      const modal = document.getElementById('agentInspectorModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAgentModal() {
+      const modal = document.getElementById('agentInspectorModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.getElementById('closeAgModalBtn').addEventListener('click', closeAgentModal);
+
+    function copyText(text, msg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopyText(text, msg));
+      } else {
+        fallbackCopyText(text, msg);
+      }
+    }
+
+    function fallbackCopyText(text, msg) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showToast(msg); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
+    document.getElementById('copyAgOutBtn').addEventListener('click', () => {
+      const ag = agents.find(a => a.id === inspectedAgentId);
+      if (!ag || !ag.output) {
+        showToast('暂无可复制的产出');
+        return;
+      }
+      copyText(ag.output, `已复制 ${ag.shortName} 的产出内容`);
+    });
+
+    document.getElementById('directChatForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inp = document.getElementById('directChatInput');
+      const q = inp.value.trim();
+      if (!q) return;
+
+      if (!apiSettings.apiKey.trim()) {
+        showToast('请先在「API设置」填写 API Key');
+        closeAgentModal();
+        switchNavTab('settings');
+        return;
+      }
+
+      const ag = agents.find(a => a.id === inspectedAgentId);
+      if (!ag) return;
+      inp.value = '';
+
+      const prefix = ag.output ? `${ag.output}\n\n--- [追问：${q}] ---\n` : `--- [指令：${q}] ---\n`;
+      ag.status = 'running';
+      renderPipelineCards();
+      syncHeaderAndMetrics();
+
+      try {
+        const prompt = ag.output
+          ? `你之前的输出如下：\n${ag.output}\n\n现在用户的补充指令/追问是：\n${q}`
+          : q;
+
+        const res = await requestLLM({
+          systemPrompt: ag.systemPrompt,
+          userPrompt: prompt,
+          onStreamUpdate: (partial) => {
+            ag.output = prefix + partial;
+            document.getElementById('modalAgOutput').textContent = ag.output;
+          }
+        });
+
+        ag.status = 'done';
+        ag.output = prefix + res.content;
+        ag.latencyMs += res.latencyMs;
+        ag.tokens += res.tokens;
+        cumulativeTokens += res.tokens;
+        cumulativeLatencyMs += res.latencyMs;
+        document.getElementById('modalAgOutput').textContent = ag.output;
+        appendLog('DIRECT_OK', `${ag.name} 完成定向回复 (${res.tokens} tok)`, ag.color);
+      } catch (err) {
+        ag.status = 'error';
+        document.getElementById('modalAgOutput').textContent = `${prefix}\n[调用失败]：${err.message}`;
+      }
+      renderPipelineCards();
+      syncHeaderAndMetrics();
+    });
+
+    function buildCombinedReport() {
+      const title = document.getElementById('missionTextarea').value.trim() || '多智能体协同任务';
+      const chunks = [`# NexusAI 多智能体真实交付报告\n\n**任务**：${title}\n**模型**：${apiSettings.model}\n**总计消耗**：${cumulativeTokens} Tokens\n`];
+      agents.forEach(ag => {
+        if (ag.output) {
+          chunks.push(`## ${ag.icon} ${ag.name} (${ag.role})\n\n${ag.output}\n`);
+        }
+      });
+      if (chunks.length === 1) {
+        return '暂无产出记录。请先配置 API Key 并在工作台启动真实任务。';
+      }
+      return chunks.join('\n---\n\n');
+    }
+
+    document.getElementById('showReportModalBtn').addEventListener('click', () => {
+      document.getElementById('reportModalContent').textContent = buildCombinedReport();
+      const m = document.getElementById('reportModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    });
+
+    document.getElementById('closeReportModalBtn').addEventListener('click', () => {
+      const m = document.getElementById('reportModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    });
+
+    document.getElementById('copyReportBtn').addEventListener('click', () => {
+      copyText(buildCombinedReport(), '已复制完整报告全文');
+    });
+
+    document.getElementById('downloadReportBtn').addEventListener('click', () => {
+      const md = buildCombinedReport();
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NexusAI_Report_${Date.now()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('已触发报告下载');
+    });
+
+    // Add New Agent Modal
+    function openNewAgentModal() {
+      const m = document.getElementById('newAgentModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+    function closeNewAgentModal() {
+      const m = document.getElementById('newAgentModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+    document.getElementById('openNewAgentBtn').addEventListener('click', openNewAgentModal);
+    document.getElementById('closeNewAgentModalBtn').addEventListener('click', closeNewAgentModal);
+    document.getElementById('cancelNewAgentBtn').addEventListener('click', closeNewAgentModal);
+
+    document.getElementById('newAgentForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('addAgName').value.trim();
+      const role = document.getElementById('addAgRole').value.trim();
+      const prompt = document.getElementById('addAgPrompt').value.trim();
+      if (!name || !role || !prompt) return;
+
+      const palette = ['#3B82F6', '#8B5CF6', '#14B8A6', '#F43F5E'];
+      const icons = ['🚀', '🧬', '🛰️', '🔮'];
+      agents.push({
+        id: `agent-${agents.length + 1}`,
+        name,
+        shortName: name.slice(0, 4),
+        role,
+        icon: icons[agents.length % icons.length],
+        color: palette[agents.length % palette.length],
+        enabled: true,
+        status: 'idle',
+        output: '',
+        latencyMs: 0,
+        tokens: 0,
+        systemPrompt: prompt
+      });
+
+      document.getElementById('newAgentForm').reset();
+      closeNewAgentModal();
+      renderAgentSettings();
+      renderPipelineCards();
+      syncHeaderAndMetrics();
+      showToast(`已添加智能体：${name}`);
+    });
+
+    // Bottom Tab Navigation
+    function switchNavTab(tab) {
+      const views = {
+        workspace: document.getElementById('tabViewWorkspace'),
+        topology: document.getElementById('tabViewTopology'),
+        agents: document.getElementById('tabViewAgents'),
+        settings: document.getElementById('tabViewSettings')
+      };
+      Object.keys(views).forEach(k => {
+        if (k === tab) views[k].classList.remove('hidden');
+        else views[k].classList.add('hidden');
+      });
+
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-nav') === tab) {
+          btn.className = 'nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-cyan-400';
+        } else {
+          btn.className = 'nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200';
+        }
+      });
+
+      if (tab === 'topology') {
+        setTimeout(resizeStageCanvas, 50);
+      }
+    }
+
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchNavTab(btn.getAttribute('data-nav')));
+    });
+
+    document.getElementById('topConfigApiBtn').addEventListener('click', () => switchNavTab('settings'));
+    document.getElementById('dynamicIslandBtn').addEventListener('click', () => switchNavTab('settings'));
+    document.getElementById('bannerConfigBtn').addEventListener('click', () => switchNavTab('settings'));
+
+    // Provider Presets
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-preset');
+        const p = PROVIDER_PRESETS[key];
+        if (!p) return;
+        document.getElementById('cfgBaseUrl').value = p.baseUrl;
+        document.getElementById('cfgModel').value = p.model;
+        document.querySelectorAll('.preset-btn').forEach(b => {
+          b.className = 'preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left';
+        });
+        btn.className = 'preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-left';
+        showToast(`已切换为 ${p.name} 预设`);
+      });
+    });
+
+    function saveApiCfg() {
+      apiSettings.baseUrl = document.getElementById('cfgBaseUrl').value.trim();
+      apiSettings.apiKey = document.getElementById('cfgApiKey').value.trim();
+      apiSettings.model = document.getElementById('cfgModel').value.trim();
+      apiSettings.temperature = parseFloat(document.getElementById('cfgTemp').value) || 0.3;
+      apiSettings.stream = document.getElementById('cfgStream').checked;
+      try {
+        localStorage.setItem('nexusai_ios_real_cfg', JSON.stringify(apiSettings));
+      } catch (e) {}
+      syncHeaderAndMetrics();
+    }
+
+    document.getElementById('saveCfgBtn').addEventListener('click', () => {
+      saveApiCfg();
+      showToast('API 配置已保存');
+    });
+
+    document.getElementById('testCfgBtn').addEventListener('click', async () => {
+      saveApiCfg();
+      const banner = document.getElementById('testResultBanner');
+      banner.classList.remove('hidden');
+      banner.className = 'rounded-xl p-3 text-xs font-mono leading-relaxed border border-cyan-500/40 bg-cyan-500/10 text-cyan-200';
+      banner.textContent = `正在向 ${apiSettings.baseUrl} 发送真实连通性测试...`;
+
+      try {
+        const res = await requestLLM({
+          systemPrompt: 'You are a concise assistant.',
+          userPrompt: '请简短回复：NexusAI iOS 真实 API 连通正常！'
+        });
+        banner.className = 'rounded-xl p-3 text-xs font-mono leading-relaxed border border-emerald-500/40 bg-emerald-500/10 text-emerald-200';
+        banner.textContent = `✔ 连通成功！耗时 ${res.latencyMs}ms · 消耗 ${res.tokens} tokens\n回复：${res.content}`;
+        appendLog('API_TEST', `连通性测试通过 (${res.latencyMs}ms)`, '#10B981');
+        showToast('API 连通测试成功！');
+      } catch (err) {
+        banner.className = 'rounded-xl p-3 text-xs font-mono leading-relaxed border border-rose-500/40 bg-rose-500/10 text-rose-200';
+        banner.textContent = `✕ 连接失败：${err.message}`;
+        appendLog('API_ERR', `连通测试失败：${err.message}`, '#EF4444');
+      }
+    });
+
+    document.getElementById('sampleTaskSelect').addEventListener('change', (e) => {
+      if (e.target.value) {
+        document.getElementById('missionTextarea').value = e.target.value;
+        e.target.value = '';
+      }
+    });
+
+    document.getElementById('runMissionBtn').addEventListener('click', startRealPipeline);
+    document.getElementById('abortMissionBtn').addEventListener('click', () => {
+      if (abortCtrl) abortCtrl.abort();
+      isExecuting = false;
+      document.getElementById('abortMissionBtn').classList.add('hidden');
+      document.getElementById('runMissionBtn').classList.remove('hidden');
+      syncHeaderAndMetrics();
+    });
+
+    document.getElementById('clearLogBtn').addEventListener('click', () => {
+      document.getElementById('busLogBox').innerHTML = '<div class="text-slate-500 text-[11px]">日志已清空。等待真实 API 调用...</div>';
+    });
+
+    window.addEventListener('resize', resizeStageCanvas);
+
+    window.addEventListener('load', () => {
+      document.getElementById('cfgBaseUrl').value = apiSettings.baseUrl;
+      document.getElementById('cfgApiKey').value = apiSettings.apiKey;
+      document.getElementById('cfgModel').value = apiSettings.model;
+      document.getElementById('cfgTemp').value = String(apiSettings.temperature);
+      document.getElementById('cfgStream').checked = apiSettings.stream;
+
+      const updateClock = () => {
+        document.getElementById('iosClock').textContent = new Date().toTimeString().slice(0, 5);
+      };
+      updateClock();
+      setInterval(updateClock, 30000);
+
+      renderPipelineCards();
+      renderAgentSettings();
+      syncHeaderAndMetrics();
+      resizeStageCanvas();
+      renderTopologyLoop();
+    });
+  </script>
+  <script>
+    // PWA Service Worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
