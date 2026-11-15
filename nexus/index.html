@@ -453,6 +453,7 @@ originalChars: 0,
 compressedChars: 0
 };
 const promptCacheStore = new Map();
+const artifactStore = {};
 function fnv1aFingerprint(text) {
 let hash = 0x811c9dc5;
 for (let i = 0; i < text.length; i++) {
@@ -461,11 +462,23 @@ hash = Math.imul(hash, 0x01000193) >>> 0;
 }
 return 'v1:' + hash.toString(16).padStart(8, '0') + ':' + text.length.toString(16);
 }
-function compressUpstreamOutput(rawText, maxChars, maxLines = 26, maxLineChars = 170) {
-const cleaned = String(rawText || '').replace(/<analysis>[\s\S]*?<\/analysis>/gi, '').trim();
-const origChars = cleaned.length;
-if (origChars <= maxChars) {
-return { summary: cleaned, originalChars: origChars, compressedChars: origChars, removedDuplicates: 0, omittedLines: 0, truncated: false };
+function splitCodeSegments(text) {
+const segments = [];
+const re = /```[^\n]*\n[\s\S]*?(?:```|$)/g;
+let last = 0;
+let m;
+while ((m = re.exec(text)) !== null) {
+if (m.index > last) segments.push({ code: false, text: text.slice(last, m.index) });
+segments.push({ code: true, text: m[0] });
+last = m.index + m[0].length;
+}
+if (last < text.length) segments.push({ code: false, text: text.slice(last) });
+return segments;
+}
+function compressProseLines(rawText, maxChars, maxLines = 26, maxLineChars = 170) {
+const cleaned = String(rawText || '').trim();
+if (cleaned.length <= maxChars) {
+return { summary: cleaned, removedDuplicates: 0, omittedLines: 0 };
 }
 const rawLines = cleaned.split('\n');
 const seen = new Set();
@@ -504,8 +517,53 @@ const omitted = Math.max(0, uniqueLines.length - finalLines.length);
 if (omitted > 0) {
 finalLines.push(`...[Trident 自动精简 ${omitted} 行次要细节，完整内容保留在节点报告]...`);
 }
-const summary = finalLines.join('\n');
-return { summary, originalChars: origChars, compressedChars: summary.length, removedDuplicates, omittedLines: omitted, truncated: true };
+return { summary: finalLines.join('\n'), removedDuplicates, omittedLines: omitted };
+}
+function compressUpstreamOutput(rawText, maxChars, maxLines = 26, maxLineChars = 170) {
+// 省Token v2: 代码块永不做行压缩(原样传递, 总量上限 14000 字符), 只有散文部分走行评分精简。
+const cleaned = String(rawText || '').replace(/<analysis>[\s\S]*?<\/analysis>/gi, '').trim();
+const origChars = cleaned.length;
+const CODE_PASS_CAP = 14000;
+const segments = splitCodeSegments(cleaned);
+const hasCode = segments.some(seg => seg.code);
+if (!hasCode) {
+if (origChars <= maxChars) {
+return { summary: cleaned, originalChars: origChars, compressedChars: origChars, removedDuplicates: 0, omittedLines: 0, truncated: false };
+}
+const p = compressProseLines(cleaned, maxChars, maxLines, maxLineChars);
+return { summary: p.summary, originalChars: origChars, compressedChars: p.summary.length, removedDuplicates: p.removedDuplicates, omittedLines: p.omittedLines, truncated: true };
+}
+let codeTotal = 0;
+let omittedLines = 0;
+let removedDuplicates = 0;
+const parts = [];
+for (const seg of segments) {
+if (seg.code) {
+if (codeTotal + seg.text.length <= CODE_PASS_CAP) {
+parts.push(seg.text);
+codeTotal += seg.text.length;
+} else {
+const lines = seg.text.split('\n');
+const headCount = Math.max(10, Math.floor(lines.length * 0.6));
+const head = lines.slice(0, headCount);
+const tail = lines.slice(-12);
+const omitted = Math.max(0, lines.length - head.length - tail.length);
+omittedLines += omitted;
+parts.push(head.join('\n') + '\n```\n...[代码过长，中间省略约 ' + omitted + ' 行，完整版保留在该节点报告中]...\n```\n' + tail.join('\n'));
+codeTotal += seg.text.length;
+}
+} else {
+const prose = seg.text.trim();
+if (!prose) continue;
+if (prose.length <= maxChars) { parts.push(prose); continue; }
+const p = compressProseLines(prose, maxChars, maxLines, maxLineChars);
+omittedLines += p.omittedLines;
+removedDuplicates += p.removedDuplicates;
+parts.push(p.summary);
+}
+}
+const summary = parts.join('\n\n');
+return { summary, originalChars: origChars, compressedChars: summary.length, removedDuplicates, omittedLines, truncated: summary.length < origChars };
 }
 function autoRouteTask(promptText) {
 const lower = String(promptText || '').toLowerCase();
@@ -523,25 +581,25 @@ engineering: [
 { id: 'agent-1', code: 'N-01', name: 'Nexus-01 架构总控', shortName: '总控', role: '全局任务拆解与技术纲要', icon: '🧠', color: '#06B6D4',
 systemPrompt: '你是 Nexus-01 架构总控智能体。请针对用户提交的任务，输出清晰的结构化拆解方案、核心架构设计原则以及各子模块的协作边界。请直接给出专业干货。' },
 { id: 'agent-2', code: 'R-02', name: 'Research-02 深度调研', shortName: '调研', role: '技术选型对比与行业基准', icon: '🔎', color: '#F59E0B',
-systemPrompt: '你是 Research-02 深度调研智能体。请结合用户的原始需求与总控架构方案，给出具体的技术栈选型对比、核心算法/协议分析及行业最佳实践参数。' },
+systemPrompt: '你是 Research-02 深度调研智能体。请结合用户的原始需求与总控架构方案，给出具体的技术栈选型对比、核心算法/协议分析及行业最佳实践参数。【省Token协议】只给选型结论与关键参数，不要复述任务原文。' },
 { id: 'agent-3', code: 'C-03', name: 'Coder-03 核心研发', shortName: '研发', role: '核心模块代码与接口实现', icon: '💻', color: '#6366F1',
-systemPrompt: '你是 Coder-03 核心研发智能体。请根据上游的总控架构与技术选型，编写关键生产级代码实现（含清晰注释、数据结构定义与核心处理逻辑）。' },
+systemPrompt: '你是 Coder-03 核心研发智能体。请根据上游的总控架构与技术选型，编写关键生产级代码实现（含清晰注释、数据结构定义与核心处理逻辑）。【省Token协议】完整代码只在本节点输出一次且用代码块包裹；说明文字从简，不要在代码块之外重复粘贴代码。' },
 { id: 'agent-4', code: 'S-04', name: 'SecOps-04 安全与压测', shortName: '安全', role: '漏洞审计、并发瓶颈与加固', icon: '🛡️', color: '#10B981',
-systemPrompt: '你是 SecOps-04 安全审计与高并发压测智能体。请严格审查上游的架构与代码，指出潜在的并发竞争、安全漏洞或异常边界，并提供具体的修复加固方案与验证清单。' },
+systemPrompt: '你是 SecOps-04 安全审计与高并发压测智能体。请严格审查上游的架构与代码，指出潜在的并发竞争、安全漏洞或异常边界，并提供具体的修复加固方案与验证清单。【省Token协议】只输出问题清单：每条含编号、级别(P0/P1/P2)、位置(函数名或行号)、问题一句话、修法一句话；禁止复述或重写完整代码，必须给修复代码时只给最小改动片段；没有问题就写「未发现问题」并列出已核查项。' },
 { id: 'agent-5', code: 'M-05', name: 'Memory-05 交付中枢', shortName: '汇总', role: '全局整合与落地执行蓝图', icon: '📑', color: '#EC4899',
-systemPrompt: '你是 Memory-05 交付汇总智能体。请将前面所有智能体的关键结论、核心架构、代码要点与安全准则汇总为一份条理清晰、可立即落地的执行蓝图。' }
+systemPrompt: '你是 Memory-05 交付汇总智能体。请将前面所有智能体的关键结论、核心架构、代码要点与安全准则汇总为一份条理清晰、可立即落地的执行蓝图。【省Token协议】禁止凭摘要重写或复述上游代码；最终交付中的完整代码用单独一行 [[ATTACH_CODE:agent-3]] 引用，系统会自动附上 Coder-03 的代码原文，你只需写结论、要点、安全清单落实情况与使用说明；仅当安全清单含 P0 且必须改代码时，才亲自输出修正后的完整代码且不使用引用标记。' }
 ],
 secops: [
 { id: 'agent-1', code: 'T-01', name: 'Threat-01 威胁建模总控', shortName: '建模', role: '攻击面梳理与权限边界定义', icon: '🎯', color: '#06B6D4',
 systemPrompt: '你是 Threat-01 威胁建模总控智能体。请采用 STRIDE 模型梳理目标系统的攻击面、信任边界与高危风险点。' },
 { id: 'agent-2', code: 'A-02', name: 'Audit-02 静态代码审计', shortName: '审计', role: '注入漏洞、越权与竞态排查', icon: '🔍', color: '#F59E0B',
-systemPrompt: '你是 Audit-02 静态代码审计智能体。请深度排查目标逻辑中的路径遍历、注入风险、竞态条件与未授权访问漏洞。' },
+systemPrompt: '你是 Audit-02 静态代码审计智能体。请深度排查目标逻辑中的路径遍历、注入风险、竞态条件与未授权访问漏洞。【省Token协议】只输出问题清单：每条含编号、级别、位置、问题一句话、修法一句话；禁止复述被审计代码全文。' },
 { id: 'agent-3', code: 'P-03', name: 'Patch-03 加固补丁研发', shortName: '补丁', role: '零信任沙箱与防御代码编写', icon: '🔒', color: '#6366F1',
-systemPrompt: '你是 Patch-03 安全加固研发智能体。请针对上游发现的所有安全隐患，编写带白名单校验、最小权限控制与异常隔离的加固代码。' },
+systemPrompt: '你是 Patch-03 安全加固研发智能体。请针对上游发现的所有安全隐患，编写带白名单校验、最小权限控制与异常隔离的加固代码。【省Token协议】完整代码只在本节点输出一次且用代码块包裹；说明文字从简，不要在代码块之外重复粘贴代码。' },
 { id: 'agent-4', code: 'X-04', name: 'Chaos-04 混沌与回归验证', shortName: '混沌', role: '极端并发、畸形输入与逃逸测试', icon: '⚡', color: '#10B981',
-systemPrompt: '你是 Chaos-04 混沌压测智能体。请编写针对性的边界测试用例、并发重入压测断言与安全合规检查表。' },
+systemPrompt: '你是 Chaos-04 混沌压测智能体。请编写针对性的边界测试用例、并发重入压测断言与安全合规检查表。【省Token协议】只输出测试清单与断言要点，禁止复述被测代码。' },
 { id: 'agent-5', code: 'C-05', name: 'Cert-05 合规签发中枢', shortName: '签发', role: '安全审计报告与最终修复版汇总', icon: '📜', color: '#EC4899',
-systemPrompt: '你是 Cert-05 合规签发智能体。请汇总所有漏洞修复记录、最终安全代码与合规审计结论，输出完整交付报告。' }
+systemPrompt: '你是 Cert-05 合规签发智能体。请汇总所有漏洞修复记录、最终安全代码与合规审计结论，输出完整交付报告。【省Token协议】禁止凭摘要重写或复述上游代码；最终交付中的完整代码用单独一行 [[ATTACH_CODE:agent-3]] 引用，系统会自动附上 Patch-03 的代码原文，你只需写结论、要点、安全清单落实情况与使用说明；仅当安全清单含 P0 且必须改代码时，才亲自输出修正后的完整代码且不使用引用标记。' }
 ],
 product: [
 { id: 'agent-1', code: 'P-01', name: 'PM-01 产品战略总控', shortName: '产品', role: '用户痛点拆解与 MVP 核心功能定义', icon: '🧭', color: '#06B6D4',
@@ -549,11 +607,11 @@ systemPrompt: '你是 PM-01 产品战略总控。请明确目标用户画像、�
 { id: 'agent-2', code: 'U-02', name: 'UX-02 交互与视觉架构', shortName: '交互', role: '核心页面流转与高转化交互设计', icon: '🎨', color: '#F59E0B',
 systemPrompt: '你是 UX-02 交互设计专家。请输出关键界面布局结构、用户首屏体验动线与零摩擦交互细节。' },
 { id: 'agent-3', code: 'D-03', name: 'Tech-03 全栈原型实现', shortName: '原型', role: '核心业务代码与数据存储实现', icon: '💻', color: '#6366F1',
-systemPrompt: '你是 Tech-03 全栈研发专家。请根据产品与交互方案编写关键前端/后端实现代码与核心数据结构。' },
+systemPrompt: '你是 Tech-03 全栈研发专家。请根据产品与交互方案编写关键前端/后端实现代码与核心数据结构。【省Token协议】完整代码只在本节点输出一次且用代码块包裹；说明文字从简，不要在代码块之外重复粘贴代码。' },
 { id: 'agent-4', code: 'G-04', name: 'Growth-04 定价与商业化', shortName: '商业', role: 'BYOK/订阅定价模型与获客漏斗', icon: '💰', color: '#10B981',
-systemPrompt: '你是 Growth-04 商业化增长专家。请制定精准的定价策略、付费解锁点、回本测算与冷启动推广渠道方案。' },
+systemPrompt: '你是 Growth-04 商业化增长专家。请制定精准的定价策略、付费解锁点、回本测算与冷启动推广渠道方案。【省Token协议】只输出定价与策略结论，不要复述上游代码或方案全文。' },
 { id: 'agent-5', code: 'L-05', name: 'Launch-05 发布交付中枢', shortName: '发布', role: '完整产品白皮书与上线清单汇总', icon: '🚀', color: '#EC4899',
-systemPrompt: '你是 Launch-05 发布交付中枢。请将产品定义、交互设计、核心代码与商业化方案整合为可直接执行的上线蓝图。' }
+systemPrompt: '你是 Launch-05 发布交付中枢。请将产品定义、交互设计、核心代码与商业化方案整合为可直接执行的上线蓝图。【省Token协议】禁止凭摘要重写或复述上游代码；最终交付中的完整代码用单独一行 [[ATTACH_CODE:agent-3]] 引用，系统会自动附上 Tech-03 的代码原文，你只需写结论、要点、安全清单落实情况与使用说明；仅当安全清单含 P0 且必须改代码时，才亲自输出修正后的完整代码且不使用引用标记。' }
 ]
 };
 const agents = SQUAD_TEMPLATES.engineering.map(item => ({
@@ -959,14 +1017,39 @@ return { content, latencyMs: elapsed, tokens, cachedHit: false };
 function spawnRealPacket(fromId, toId, color) {
 activePackets.push({ fromId, toId, progress: 0, speed: 0.022 + Math.random() * 0.01, color: color || '#06B6D4', trail: [] });
 }
+function extractCodeBlocks(text) {
+const blocks = [];
+const re = /```[^\n]*\n[\s\S]*?```/g;
+let m;
+const src = String(text || '');
+while ((m = re.exec(src)) !== null) blocks.push(m[0]);
+return blocks;
+}
+function resolveAttachMarkers(text) {
+return String(text || '').replace(/\[\[ATTACH_CODE:(agent-\d+)\]\]/g, (whole, agentId) => {
+const stored = artifactStore[agentId];
+if (!stored) return whole;
+const blocks = extractCodeBlocks(stored);
+const payload = blocks.length ? blocks.join('\n\n') : stored;
+const srcAgent = agents.find(a => a.id === agentId);
+const srcName = srcAgent ? srcAgent.name : agentId;
+return '\n\n---\n📎 附：最终代码（由系统按引用自动附上 ' + srcName + ' 的原文，未经改写）\n\n' + payload + '\n';
+});
+}
 function buildAutoClawContext(taskText, completedAgents) {
+// 省Token v2 分层预算: 直属上游给足预算; 更早节点只留 700 字摘要; 代码由 compressUpstreamOutput 原样传递。
 let compacted = `${COMPACT_CONTINUATION_PREAMBLE}\n【用户原始任务】：\n${taskText}\n`;
+let lastCodeAgent = null;
 completedAgents.forEach((ag, index) => {
 const isImmediatePrev = index === completedAgents.length - 1;
-const charBudget = isImmediatePrev ? apiSettings.compactMaxChars * 2 : apiSettings.compactMaxChars;
+if (/```/.test(ag.output || '')) lastCodeAgent = ag;
+const charBudget = isImmediatePrev ? Math.max(apiSettings.compactMaxChars * 2, 6000) : 700;
 const comp = compressUpstreamOutput(ag.output, charBudget);
-compacted += `\n--- [上游 ${ag.name} 核心摘要] ---\n${comp.summary}\n`;
+compacted += `\n--- [上游 ${ag.name} ${isImmediatePrev ? '完整产出' : '核心摘要'}] ---\n${comp.summary}\n`;
 });
+if (lastCodeAgent) {
+compacted += `\n【产物引用】${lastCodeAgent.name} 的代码原文已由系统存档。整合交付时用单独一行 [[ATTACH_CODE:${lastCodeAgent.id}]] 引用即可，系统会自动附上原文，禁止凭摘要重写代码。\n`;
+}
 compacted += `\n${COMPACT_DIRECT_RESUME_INSTRUCTION}`;
 return compacted;
 }
@@ -1015,6 +1098,8 @@ renderPipelineCards();
 clearInterval(pktTimer);
 ag.status = 'done';
 ag.output = res.content;
+artifactStore[ag.id] = res.content;
+ag.output = resolveAttachMarkers(ag.output);
 ag.latencyMs = res.latencyMs;
 ag.tokens = res.tokens;
 ag.cachedHit = Boolean(res.cachedHit);
@@ -1090,6 +1175,7 @@ a.cachedHit = false;
 tridentStats.tokensSavedEstimate = 0;
 tridentStats.originalChars = 0;
 tridentStats.compressedChars = 0;
+Object.keys(artifactStore).forEach(k => delete artifactStore[k]);
 isExecuting = true;
 abortCtrl = new AbortController();
 document.getElementById('runMissionBtn').classList.add('hidden');
@@ -1097,7 +1183,7 @@ document.getElementById('abortMissionBtn').classList.remove('hidden');
 renderPipelineCards();
 syncHeaderAndMetrics();
 workflowSFX.missionLaunch();
-appendLog('CLAW_AUTO', `已自动挂载 [${routes.join(' + ')}] 路由与 Trident 三阶压缩引擎`, '#06B6D4');
+appendLog('CLAW_AUTO', `已自动挂载 [${routes.join(' + ')}] 路由与 Trident 省Token引擎 v2（代码原样传递 · 清单审计 · 运行时拼装）`, '#06B6D4');
 const hubId = runList[0].id;
 const completedAgents = [];
 if (mode === 'parallel_fork' && runList.length >= 3) {
