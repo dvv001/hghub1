@@ -2,7 +2,7 @@
 <html lang="zh-CN" class="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>NexusAI — iOS 多智能体协同中枢</title>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#060911">
@@ -39,12 +39,21 @@ slate: {
 </script>
 <style>
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body {
+html, body {
 background-color: #060911;
 color: #F1F5F9;
 font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', system-ui, sans-serif;
+width: 100%;
+max-width: 100vw;
 overflow-x: hidden;
 margin: 0;
+padding: 0;
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
+}
+.safe-wrap {
+overflow-wrap: anywhere;
+word-break: break-word;
 }
 .hidden { display: none !important; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -80,9 +89,9 @@ box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
 .animate-pulse-slow { animation: pulse-slow 1.8s infinite ease-in-out; }
 </style>
 </head>
-<body class="min-h-screen flex flex-col items-center bg-slate-950 selection:bg-cyan-500/30 selection:text-cyan-200">
-<div class="w-full max-w-[480px] min-h-screen flex flex-col bg-[#060911] sm:border-x sm:border-slate-800/80 relative">
-<header id="mainAppHeader" class="sticky top-0 z-30 bg-[#060911]/90 backdrop-blur-xl border-b border-slate-800/80 px-4 pt-2.5 pb-2.5">
+<body class="w-full min-h-screen flex flex-col items-center bg-slate-950 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
+<div id="appRootShell" class="w-full max-w-[480px] min-w-0 min-h-screen flex flex-col bg-[#060911] sm:border-x sm:border-slate-800/80 relative overflow-x-hidden mx-auto">
+<header id="mainAppHeader" class="w-full min-w-0 sticky top-0 z-30 bg-[#060911]/90 backdrop-blur-xl border-b border-slate-800/80 px-3.5 pt-2.5 pb-2.5">
 <div class="flex items-center justify-between text-xs font-semibold text-slate-300 mb-2">
 <span id="iosClock" class="font-mono text-[11px]">09:41</span>
 <button id="dynamicIslandBtn" type="button" class="dynamic-island px-3.5 py-1 flex items-center gap-2">
@@ -116,75 +125,75 @@ box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
 </div>
 </div>
 </header>
-<main class="flex-1 px-3.5 py-3 space-y-3 pb-24">
-<section id="tabViewWorkspace" class="space-y-3">
-<div id="apiAlertBanner" class="glass-panel rounded-2xl p-3 border border-amber-500/40 bg-amber-500/10 flex items-center justify-between gap-2">
-<div class="text-xs text-amber-200 leading-relaxed">
+<main class="w-full min-w-0 flex-1 px-3.5 py-3 space-y-3 pb-24 overflow-x-hidden">
+<section id="tabViewWorkspace" class="w-full min-w-0 space-y-3">
+<div id="apiAlertBanner" class="glass-panel rounded-2xl p-3 border border-amber-500/40 bg-amber-500/10 flex items-center justify-between gap-2 min-w-0">
+<div class="text-xs text-amber-200 leading-relaxed min-w-0 safe-wrap">
 <strong class="text-amber-300">尚未填写 API Key：</strong>所有任务均已默认内置 Claw-Code 全自动优化，请先填入模型 API Key。
 </div>
-<button id="bannerConfigBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shrink-0">
+<button id="bannerConfigBtn" type="button" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shrink-0">
 去配置
 </button>
 </div>
-<div class="glass-panel rounded-2xl p-3.5 space-y-2.5">
-<div class="flex items-center justify-between gap-2">
-<span class="text-xs font-bold text-slate-200">🎯 派发真实任务 (后台自动启用 Claw-Code 引擎)</span>
-<select id="sampleTaskSelect" aria-label="预设真实任务模板" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500">
+<div class="glass-panel rounded-2xl p-3.5 space-y-2.5 min-w-0 overflow-hidden">
+<div class="flex items-center justify-between gap-2 min-w-0">
+<span class="text-xs font-bold text-slate-200 truncate min-w-0 flex-1">🎯 派发真实任务 (后台自动启用 Claw-Code 引擎)</span>
+<select id="sampleTaskSelect" aria-label="预设真实任务模板" class="w-[132px] sm:w-[155px] shrink-0 truncate bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500">
 <option value="">💡 选填测试任务...</option>
 <option value="设计一套高并发秒杀防超卖系统架构，编写核心 Redis Lua 扣减库存代码，并输出安全边界审计清单">⚡ 高并发秒杀架构+代码+审计</option>
 <option value="设计一款 iOS 个人 AI 语音笔记 App 的产品架构、核心数据表结构、SwiftUI 录音转写关键代码及商业化方案">📱 iOS AI 语音笔记 App 全案</option>
 <option value="构建多因子量化选股回测框架，推导夏普比率与最大回撤计算公式，并给出核心 Python 向量化回测代码">📊 量化选股策略与 Python 代码</option>
 </select>
 </div>
-<textarea id="missionTextarea" rows="3" placeholder="直接输入您的任务需求，系统将在后台自动完成工具路由、Trident 上下文压缩、防漂移注入与异常自愈..." class="w-full bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none leading-relaxed"></textarea>
-<div class="flex items-center justify-between gap-2 pt-0.5">
-<select id="execModeSelect" aria-label="执行链路模式" class="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-2 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500">
+<textarea id="missionTextarea" rows="3" placeholder="直接输入您的任务需求，系统将在后台自动完成工具路由、Trident 上下文压缩、防漂移注入与异常自愈..." class="w-full bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none leading-relaxed safe-wrap"></textarea>
+<div class="flex items-center justify-between gap-2 pt-0.5 min-w-0">
+<select id="execModeSelect" aria-label="执行链路模式" class="flex-1 min-w-0 truncate bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-2 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500">
 <option value="auto_claw">⚡ 全自动 Claw 协同 (自动压缩+防漂移+自愈)</option>
 <option value="parallel_fork">🚀 极速并行分叉 (总控拆解→多节点并发→汇总)</option>
 <option value="fast">⏱️ 精简快速模式 (前3个核心节点)</option>
 </select>
-<div class="flex items-center gap-1.5 flex-1 justify-end">
-<button id="abortMissionBtn" type="button" class="hidden px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white transition">
+<div class="flex items-center gap-1.5 shrink-0 justify-end">
+<button id="abortMissionBtn" type="button" class="hidden whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white transition">
 ⏹ 停止执行
 </button>
-<button id="runMissionBtn" type="button" class="flex-1 max-w-[180px] px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-md shadow-cyan-500/20 transition">
+<button id="runMissionBtn" type="button" class="whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-md shadow-cyan-500/20 transition">
 🚀 启动真实协同
 </button>
 </div>
 </div>
 </div>
-<div class="grid grid-cols-3 gap-2">
-<div class="glass-panel rounded-xl p-2.5 text-center">
-<div class="text-[10px] text-slate-400">已完成节点</div>
-<div class="text-xs font-mono font-bold text-cyan-400 mt-0.5"><span id="kpiDoneAgents">0</span> / <span id="kpiEnabledAgents">5</span></div>
+<div class="grid grid-cols-3 gap-2 min-w-0">
+<div class="glass-panel rounded-xl p-2.5 text-center min-w-0 overflow-hidden">
+<div class="text-[10px] text-slate-400 truncate">已完成节点</div>
+<div class="text-xs font-mono font-bold text-cyan-400 mt-0.5 whitespace-nowrap"><span id="kpiDoneAgents">0</span> / <span id="kpiEnabledAgents">5</span></div>
 </div>
-<div class="glass-panel rounded-xl p-2.5 text-center">
-<div class="text-[10px] text-slate-400">消耗 / 自动省流</div>
-<div class="text-xs font-mono font-bold text-indigo-400 mt-0.5"><span id="kpiRealTokens">0</span> <span id="kpiSavedTokens" class="text-[10px] text-emerald-400">(省0)</span></div>
+<div class="glass-panel rounded-xl p-2.5 text-center min-w-0 overflow-hidden">
+<div class="text-[10px] text-slate-400 truncate">消耗 / 自动省流</div>
+<div class="text-xs font-mono font-bold text-indigo-400 mt-0.5 truncate"><span id="kpiRealTokens">0</span> <span id="kpiSavedTokens" class="text-[10px] text-emerald-400 whitespace-nowrap">(省0)</span></div>
 </div>
-<div class="glass-panel rounded-xl p-2.5 text-center">
-<div class="text-[10px] text-slate-400">累计接口耗时</div>
-<div id="kpiRealLatency" class="text-xs font-mono font-bold text-emerald-400 mt-0.5">0.0s</div>
+<div class="glass-panel rounded-xl p-2.5 text-center min-w-0 overflow-hidden">
+<div class="text-[10px] text-slate-400 truncate">累计接口耗时</div>
+<div id="kpiRealLatency" class="text-xs font-mono font-bold text-emerald-400 mt-0.5 whitespace-nowrap">0.0s</div>
 </div>
 </div>
-<div class="space-y-2">
-<div class="flex items-center justify-between px-0.5">
-<h2 class="text-xs font-bold text-slate-300">⚡ 智能体实时执行流水线 (点击卡片查看或追问)</h2>
-<button id="showReportModalBtn" type="button" class="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300">
+<div class="space-y-2 min-w-0">
+<div class="flex items-center justify-between gap-2 px-0.5 min-w-0">
+<h2 class="text-xs font-bold text-slate-300 truncate min-w-0 flex-1">⚡ 智能体实时执行流水线 (点击卡片查看或追问)</h2>
+<button id="showReportModalBtn" type="button" class="whitespace-nowrap shrink-0 text-[11px] font-semibold text-cyan-400 hover:text-cyan-300">
 📑 完整报告 & 导出
 </button>
 </div>
-<div id="pipelineAgentCards" class="space-y-2"></div>
+<div id="pipelineAgentCards" class="space-y-2 min-w-0"></div>
 </div>
-<div class="glass-panel rounded-2xl p-3">
-<div class="flex items-center justify-between mb-2">
-<span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-<span class="w-2 h-2 rounded-full bg-indigo-400"></span>
-Claw-Code 自动内核与 API 调度日志
+<div class="glass-panel rounded-2xl p-3 min-w-0 overflow-hidden">
+<div class="flex items-center justify-between gap-2 mb-2 min-w-0">
+<span class="text-xs font-bold text-slate-300 flex items-center gap-1.5 truncate min-w-0">
+<span class="w-2 h-2 rounded-full bg-indigo-400 shrink-0"></span>
+<span class="truncate">Claw-Code 自动内核与 API 调度日志</span>
 </span>
-<button id="clearLogBtn" type="button" class="text-[11px] text-slate-400 hover:text-slate-200">清空</button>
+<button id="clearLogBtn" type="button" class="whitespace-nowrap shrink-0 text-[11px] text-slate-400 hover:text-slate-200">清空</button>
 </div>
-<div id="busLogBox" class="space-y-1.5 max-h-40 overflow-y-auto font-mono text-[11px] text-slate-300">
+<div id="busLogBox" class="space-y-1.5 max-h-40 overflow-y-auto overflow-x-hidden font-mono text-[11px] text-slate-300 safe-wrap">
 <div class="text-slate-500 text-[11px]">全自动内核待命中。派发任意任务后将自动执行路由、Trident 压缩与 API 推理...</div>
 </div>
 </div>
@@ -299,7 +308,7 @@ Claw-Code 自动内核与 API 调度日志
 🔌 测试 API 连通性
 </button>
 </div>
-<div id="testResultBanner" class="hidden rounded-xl p-3 text-xs font-mono leading-relaxed border"></div>
+<div id="testResultBanner" class="hidden rounded-xl p-3 text-xs font-mono leading-relaxed border safe-wrap overflow-x-hidden"></div>
 </div>
 </section>
 <section id="tabViewLibrary" class="hidden space-y-3">
@@ -430,7 +439,7 @@ Claw-Code 自动内核与 API 调度日志
 <button id="closeAgModalBtn" type="button" class="px-2.5 py-1 rounded-lg text-xs bg-slate-800 text-slate-300">✕</button>
 </div>
 </div>
-<div id="modalAgOutput" class="flex-1 overflow-y-auto my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed min-h-[200px]"></div>
+<div id="modalAgOutput" class="flex-1 overflow-y-auto overflow-x-hidden my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap safe-wrap leading-relaxed min-h-[200px]"></div>
 <form id="directChatForm" class="flex items-center gap-2 pt-1">
 <input id="directChatInput" type="text" required placeholder="向该 Agent 追问或发送单独指令 (真实调用API)..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
 <button type="submit" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 shrink-0">
@@ -450,7 +459,7 @@ Claw-Code 自动内核与 API 调度日志
 <button id="closeReportModalBtn" type="button" class="px-2 py-1 rounded-lg text-xs bg-slate-800 text-slate-300">✕</button>
 </div>
 </div>
-<div id="reportModalContent" class="flex-1 overflow-y-auto my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed min-h-[220px]"></div>
+<div id="reportModalContent" class="flex-1 overflow-y-auto overflow-x-hidden my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap safe-wrap leading-relaxed min-h-[220px]"></div>
 </div>
 </div>
 <div id="newAgentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
@@ -684,7 +693,7 @@ try { await mcpRelayCall(server, { jsonrpc: '2.0', method: 'notifications/initia
 } catch (e) {}
 }
 const data = await mcpRelayCall(server, { jsonrpc: '2.0', id: 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), method: method, params: params || {}}, mcpSessions[server.name]);
-if (data.status === 404 && data.sessionId === '') { /* 会话可能已失效，下次运行重建 */}
+if (data.status === 404 && data.sessionId === '') { delete mcpSessions[server.name]; }
 const msg = mcpParseBody(data.body, data.contentType);
 if (!msg) throw new Error('MCP 服务器返回无法解析（HTTP ' + data.status + '）');
 if (msg.error) throw new Error('MCP 错误：' + (msg.error.message || JSON.stringify(msg.error)));
@@ -710,7 +719,7 @@ appendLog('MCP', '服务器「' + sv.name + '」连接失败：' + e.message + '
 }
 }
 async function resolveMcpMarkers(output, agentId) {
-const re = /\[\[MCP:([^\]]+)\]\]/g;
+const re = /\[\[MCP:([\s\S]+?)\]\]/g;
 const inners = [...new Set([...String(output || '').matchAll(re)].map(m => m[1]))];
 if (!inners.length) return output;
 let result = String(output);
@@ -830,9 +839,26 @@ function libRenderAgentChecks(containerId, selected) {
 const box = document.getElementById(containerId);
 if (!box) return;
 const sel = (selected && selected.length)? selected: ['all'];
-let html = '<label class="flex items-center gap-1 text-[11px] text-slate-200 bg-slate-800 rounded-lg px-2 py-1"><input type="checkbox" value="all"' + (sel.indexOf('all') >= 0? ' checked': '') + '> 全部</label>';
-agents.forEach(ag => { html += '<label class="flex items-center gap-1 text-[11px] text-slate-200 bg-slate-800 rounded-lg px-2 py-1"><input type="checkbox" value="' + ag.id + '"' + (sel.indexOf(ag.id) >= 0? ' checked': '') + '> ' + ag.name + '</label>';});
+let html = '<label class="flex items-center gap-1 text-[11px] text-slate-200 bg-slate-800 rounded-lg px-2 py-1 cursor-pointer"><input type="checkbox" value="all"' + (sel.indexOf('all') >= 0? ' checked': '') + '> 全部</label>';
+agents.forEach(ag => { html += '<label class="flex items-center gap-1 text-[11px] text-slate-200 bg-slate-800 rounded-lg px-2 py-1 cursor-pointer"><input type="checkbox" value="' + ag.id + '"' + (sel.indexOf(ag.id) >= 0? ' checked': '') + '> ' + ag.name + '</label>';});
 box.innerHTML = html;
+if (!box.dataset.checkBound && box.addEventListener) {
+box.dataset.checkBound = '1';
+box.addEventListener('change', (ev) => {
+const t = ev.target;
+if (!t || t.type !== 'checkbox') return;
+const allBox = box.querySelector('input[value="all"]');
+const others = [...box.querySelectorAll('input[type="checkbox"]:not([value="all"])')];
+if (t.value === 'all' && t.checked) {
+others.forEach(cb => { cb.checked = false; });
+} else if (t.value !== 'all' && t.checked && allBox) {
+allBox.checked = false;
+}
+if (allBox && !allBox.checked && others.every(cb => !cb.checked)) {
+allBox.checked = true;
+}
+});
+}
 }
 function libReadAgentChecks(containerId) {
 const box = document.getElementById(containerId);
@@ -1089,22 +1115,22 @@ async function fetchPageViaKitesurf(url) {
 }
 
 async function resolveFetchMarkers(output) {
-const re = /\[\[FETCH:(https?:\/\/[^\]\s]+)\]\]/g;
+const re = /\[\[FETCH:\s*(https?:\/\/[^\]\s]+)\s*\]\]/g;
 const urls = [...new Set([...String(output || '').matchAll(re)].map(m => m[1]))];
 if (!urls.length) return output;
 let result = String(output);
 for (const url of urls) {
-const marker = '[[FETCH:' + url + ']]';
+const markerRe = new RegExp('\\[\\[FETCH:\\s*' + libEscapeRegExp(url) + '\\s*\\]\\]', 'g');
 if (!kitesurfConfigured()) {
-result = result.split(marker).join('（未配置 Cloudflare 凭证，未能抓取 ' + url + '）');
+result = result.replace(markerRe, () => '（未配置 Cloudflare 凭证，未能抓取 ' + url + '）');
 continue;
 }
 try {
 const page = await fetchPageViaKitesurf(url);
 if (page) recordEvidence('FETCH', url, page);
-result = result.split(marker).join(page ? '\n【Kitesurf 抓取 ' + url + '】\n' + page + '\n' + '【/证据】\n' : '（本次运行抓取次数已达上限，未抓取 ' + url + '）');
+result = result.replace(markerRe, () => page ? '\n【Kitesurf 抓取 ' + url + '】\n' + page + '\n' + '【/证据】\n' : '（本次运行抓取次数已达上限，未抓取 ' + url + '）');
 } catch (e) {
-result = result.split(marker).join('（抓取 ' + url + ' 失败：' + e.message + '，已跳过）');
+result = result.replace(markerRe, () => '（抓取 ' + url + ' 失败：' + e.message + '，已跳过）');
 }
 }
 return result;
@@ -1440,7 +1466,7 @@ box.innerHTML = '';
 }
 const time = new Date().toTimeString().slice(0, 8);
 const item = document.createElement('div');
-item.className = 'border-l-2 pl-2 py-0.5 leading-snug';
+item.className = 'border-l-2 pl-2 py-0.5 leading-snug safe-wrap overflow-hidden';
 item.style.borderColor = color || '#06B6D4';
 const safeText = String(text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 item.innerHTML = `<span class="text-cyan-400">[${time}] ${tag}</span> <span class="text-slate-200">${safeText}</span>`;
@@ -1511,20 +1537,20 @@ const safeSnippet = ag.output
 ? ag.output.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 160) + (ag.output.length > 160 ? '...' : '')
 : '';
 return `
-<div data-card-agent="${ag.id}" class="glass-panel rounded-2xl p-3 border ${borderCls} cursor-pointer transition hover:border-cyan-500/50">
-<div class="flex items-center justify-between gap-2">
-<div class="flex items-center gap-2.5 min-w-0">
+<div data-card-agent="${ag.id}" class="w-full min-w-0 overflow-hidden glass-panel rounded-2xl p-3 border ${borderCls} cursor-pointer transition hover:border-cyan-500/50">
+<div class="flex items-center justify-between gap-2 min-w-0">
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
 <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style="background:${ag.color}20; border:1px solid ${ag.color}55;">
 ${ag.icon}
 </div>
-<div class="min-w-0">
+<div class="min-w-0 flex-1">
 <div class="text-xs font-bold text-white truncate">${idx + 1}. ${ag.name}</div>
 <div class="text-[11px] text-slate-400 truncate">${ag.role}</div>
 </div>
 </div>
 <div class="shrink-0">${badge}</div>
 </div>
-${safeSnippet ? `<div class="mt-2 p-2 rounded-xl bg-slate-950/90 border border-slate-800/80 font-mono text-[11px] text-slate-300 leading-relaxed">${safeSnippet}</div>` : ''}
+${safeSnippet ? `<div class="mt-2 p-2 rounded-xl bg-slate-950/90 border border-slate-800/80 font-mono text-[11px] text-slate-300 leading-relaxed safe-wrap overflow-hidden">${safeSnippet}</div>` : ''}
 </div>
 `;
 }).join('');
@@ -1653,36 +1679,47 @@ throw new Error(errMsg);
 if (useStream && response.body && typeof response.body.getReader === 'function') {
 const reader = response.body.getReader();
 const decoder = new TextDecoder('utf-8');
+let answerContent = '';
+let reasoningContent = '';
 let fullContent = '';
+let streamTokens = 0;
+let streamError = '';
 let buffer = '';
-while (true) {
-const { done, value } = await reader.read();
-if (done) break;
-buffer += decoder.decode(value, { stream: true });
-const lines = buffer.split('\n');
-buffer = lines.pop() || '';
-for (const raw of lines) {
+const processLine = (raw) => {
 const line = raw.trim();
-if (!line || !line.startsWith('data:')) continue;
+if (!line || !line.startsWith('data:')) return;
 const payload = line.slice(5).trim();
-if (payload === '[DONE]') continue;
+if (payload === '[DONE]') return;
 try {
 const parsed = JSON.parse(payload);
-const delta =
-parsed?.choices?.[0]?.delta?.content ||
-parsed?.choices?.[0]?.delta?.reasoning_content ||
-parsed?.delta?.text ||
-'';
-if (delta) {
-fullContent += delta;
+if (parsed?.error?.message) { streamError = parsed.error.message; return; }
+if (parsed?.usage?.total_tokens) { streamTokens = parsed.usage.total_tokens; }
+const cDelta = parsed?.choices?.[0]?.delta?.content || parsed?.delta?.text || '';
+const rDelta = parsed?.choices?.[0]?.delta?.reasoning_content || '';
+if (cDelta || rDelta) {
+if (cDelta) answerContent += cDelta;
+if (rDelta) reasoningContent += rDelta;
+fullContent = reasoningContent ? (`<analysis>\n${reasoningContent}\n</analysis>\n\n` + answerContent) : answerContent;
 workflowSFX.streamTick();
 onStreamUpdate(fullContent);
 }
 } catch (_) {}
+};
+while (true) {
+const { done, value } = await reader.read();
+if (done) {
+buffer += decoder.decode();
+if (buffer.trim()) buffer.split('\n').forEach(processLine);
+break;
 }
+buffer += decoder.decode(value, { stream: true });
+const lines = buffer.split('\n');
+buffer = lines.pop() || '';
+for (const raw of lines) processLine(raw);
 }
+if (!fullContent && streamError) throw new Error(streamError);
 const elapsed = Math.round(performance.now() - startTime);
-const estTokens = Math.max(1, Math.ceil((systemPrompt.length + finalUserPrompt.length + fullContent.length) / 3));
+const estTokens = streamTokens || Math.max(1, Math.ceil((systemPrompt.length + finalUserPrompt.length + fullContent.length) / 3));
 if (fullContent) {
 promptCacheStore.set(cacheKey, { content: fullContent, tokens: estTokens, ts: Date.now() });
 }
@@ -1730,7 +1767,7 @@ let compacted = `${COMPACT_CONTINUATION_PREAMBLE}\n【用户原始任务】：\n
 let lastCodeAgent = null;
 completedAgents.forEach((ag, index) => {
 const isImmediatePrev = index === completedAgents.length - 1;
-if (/```/.test(ag.output || '')) lastCodeAgent = ag;
+if (/```/.test(ag.output || '') && (!lastCodeAgent || ag.id === 'agent-3')) lastCodeAgent = ag;
 const charBudget = isImmediatePrev ? Math.max(apiSettings.compactMaxChars * 2, 6000) : 700;
 const comp = compressUpstreamOutput(ag.output, charBudget);
 compacted += `\n--- [上游 ${ag.name} ${isImmediatePrev ? '完整产出' : '核心摘要'}] ---\n${comp.summary}\n`;
@@ -1775,7 +1812,7 @@ if (ad.test(out)) { used = true; out = await ad.resolve(out, agentId); }
 return { text: out, used };
 }
 function stripToolMarkers(text) {
-return String(text || '').replace(/\[\[FETCH:[^\]]+\]\]/g, '（最终交付节点不执行抓取）').replace(/\[\[SKILL:[^\]]+\]\]/g, '（最终交付节点不加载技能）').replace(/\[\[MCP:[^\]]+\]\]/g, '（最终交付节点不调用工具）');
+return String(text || '').replace(/\[\[FETCH:[^\]]+\]\]/g, '（最终交付节点不执行抓取）').replace(/\[\[SKILL:[^\]]+\]\]/g, '（最终交付节点不加载技能）').replace(/\[\[MCP:[\s\S]+?\]\]/g, '（最终交付节点不调用工具）');
 }
 async function executeSingleAgentNode(ag, hubId, promptForAgent) {
 ag.status = 'running';
@@ -1816,11 +1853,12 @@ signal: abortCtrl.signal,
 onStreamUpdate: (partial) => {
 ag.output = partial;
 renderPipelineCards();
+if (inspectedAgentId === ag.id && !document.getElementById('agentInspectorModal').classList.contains('hidden')) {
+document.getElementById('modalAgOutput').textContent = partial;
+}
 }
 });
 }
-clearInterval(pktTimer);
-ag.status = 'done';
 ag.output = res.content;
 artifactStore[ag.id] = res.content;
 ag.output = (ag.id === pipelineFinalAgentId) ? resolveAttachMarkers(ag.output) : ag.output.replace(/\[\[ATTACH_CODE:agent-\d+\]\]/g, '(代码原文见原节点报告)');
@@ -1833,6 +1871,7 @@ let toolRound = 0;
 while (toolPass.used && toolRound < TOOL_LOOP_MAX_ROUNDS && ag.id !== 'agent-1') {
 toolRound++;
 appendLog('TOOL_LOOP', ag.name + ' 已收到工具结果，结合结果继续产出（第 ' + toolRound + ' 轮）', ag.color);
+const prevToolOutput = ag.output;
 try {
 const contPrompt = '【工具结果已返回】你上一版产出中调用的工具已经执行完毕，结果已替换到对应标记处。带结果的完整产出如下：\n\n' + ag.output + '\n\n请基于这些真实结果，给出你本节点的最终版产出：完整替换上一版，真正使用结果中的数据与出处，不要再写等待结果、即将检索之类的话。如确有必要可以再调用工具，但不要重复调用同一个工具或同一个网址。';
 const contRes = await requestLLM({
@@ -1842,6 +1881,9 @@ signal: abortCtrl.signal,
 onStreamUpdate: (partial) => {
 ag.output = partial;
 renderPipelineCards();
+if (inspectedAgentId === ag.id && !document.getElementById('agentInspectorModal').classList.contains('hidden')) {
+document.getElementById('modalAgOutput').textContent = partial;
+}
 }
 });
 extraTokens += contRes.tokens;
@@ -1853,6 +1895,7 @@ toolPass = await runToolResolvers(ag.output, ag.id);
 ag.output = toolPass.text;
 } catch (loopErr) {
 if (loopErr.name === 'AbortError') throw loopErr;
+ag.output = prevToolOutput;
 appendLog('TOOL_LOOP', ag.name + ' 工具循环续写失败，保留上一版产出：' + loopErr.message, '#F59E0B');
 break;
 }
@@ -1860,23 +1903,28 @@ break;
 } else {
 ag.output = stripToolMarkers(ag.output);
 }
+clearInterval(pktTimer);
+ag.status = 'done';
 ag.latencyMs = res.latencyMs + extraLatency;
 ag.tokens = res.tokens + extraTokens;
 ag.cachedHit = Boolean(res.cachedHit);
-cumulativeTokens += res.tokens + extraTokens;
-cumulativeLatencyMs += res.latencyMs + extraLatency;
-if (res.content) {
-const comp = compressUpstreamOutput(res.content, apiSettings.compactMaxChars);
+cumulativeTokens += ag.tokens;
+cumulativeLatencyMs += ag.latencyMs;
+if (ag.output) {
+const comp = compressUpstreamOutput(ag.output, apiSettings.compactMaxChars);
 tridentStats.originalChars += comp.originalChars;
 tridentStats.compressedChars += comp.compressedChars;
 const savedChars = Math.max(0, comp.originalChars - comp.compressedChars);
 tridentStats.tokensSavedEstimate += Math.round(savedChars / 3);
 }
+if (inspectedAgentId === ag.id && !document.getElementById('agentInspectorModal').classList.contains('hidden')) {
+document.getElementById('modalAgOutput').textContent = ag.output;
+}
 workflowSFX.nodeCompleteAndCompact();
 spawnRealPacket(ag.id, hubId, '#10B981');
 appendLog(
 res.cachedHit ? 'FNV_HIT' : 'DONE',
-`${ag.name} 完成 (${(res.latencyMs / 1000).toFixed(1)}s · ${res.tokens} tok)`,
+`${ag.name} 完成 (${(ag.latencyMs / 1000).toFixed(1)}s · ${ag.tokens} tok)`,
 '#10B981'
 );
 renderPipelineCards();
@@ -1920,7 +1968,8 @@ switchNavTab('settings');
 document.getElementById('cfgApiKey').focus();
 return;
 }
-// Kitesurf 预抓：任务文本中的网址先抓回来，注入全线上下文
+await prefetchMcpTools();
+// Kitesurf 预抓：任务文本中的网址先抓回来，注入全线上下文与证据池
 prefetchedPages = [];
 Object.keys(kitesurfCache).forEach(k => delete kitesurfCache[k]);
 kitesurfFetchCount = 0;
@@ -1929,7 +1978,7 @@ const taskUrls = extractUrls(taskText).slice(0, 3);
 for (const u of taskUrls) {
 try {
 const page = await fetchPageViaKitesurf(u);
-if (page) { prefetchedPages.push({ url: u, text: page}); appendLog('KITESURF', '已抓取任务页面：' + u + '（' + page.length + ' 字）', '#22D3EE');}
+if (page) { prefetchedPages.push({ url: u, text: page}); recordEvidence('FETCH', u, page); appendLog('KITESURF', '已抓取任务页面：' + u + '（' + page.length + ' 字）', '#22D3EE');}
 } catch (e) {
 appendLog('KITESURF', '抓取 ' + u + ' 失败：' + e.message + '（已跳过，不影响运行）', '#F59E0B');
 }
@@ -1937,7 +1986,6 @@ appendLog('KITESURF', '抓取 ' + u + ' 失败：' + e.message + '（已跳过�
 } else if (extractUrls(taskText).length) {
 appendLog('KITESURF', '任务含网址但未配置 Cloudflare 凭证，智能体将看不到页面内容（可在 API设置 中填入）', '#F59E0B');
 }
-await prefetchMcpTools();
 const mode = document.getElementById('execModeSelect').value;
 let runList = agents.filter(a => a.enabled);
 if (mode === 'fast' && runList.length > 3) {
@@ -1983,6 +2031,7 @@ if (ok) completedAgents.push(ag);
 });
 })
 );
+completedAgents.sort((a, b) => runList.indexOf(a) - runList.indexOf(b));
 if (isExecuting && finalAgent) {
 const finalContext = buildAutoClawContext(taskText, completedAgents, finalAgent ? finalAgent.id : null);
 const finalPrompt = `以下是用户原始任务及各并行智能体已完成的产出，请以你的专业身份（${finalAgent.name}）整合为完整的最终落地蓝图：\n\n${finalContext}`;
@@ -2258,9 +2307,15 @@ function drawSpiderOnSlip(cx, cy, angle, legPhase, color, activeSlipBox, isStepp
 }
 
 function renderTopologyLoop() {
+  const topoSec = document.getElementById('tabViewTopology');
+  if (document.hidden || (topoSec && topoSec.classList.contains('hidden'))) {
+    requestAnimationFrame(renderTopologyLoop);
+    return;
+  }
   tick++;
   const enabledNow = agents.filter(a => a.enabled);
-  if (enabledNow.length !== agentPlanes.length && enabledNow.length > 0) {
+  const planesMismatch = enabledNow.length !== agentPlanes.length || enabledNow.some((ag, i) => !agentPlanes[i] || agentPlanes[i].agent !== ag);
+  if (planesMismatch && enabledNow.length > 0) {
     buildFiveAgentPlanes();
     layoutFivePlanes();
   }
@@ -2583,16 +2638,21 @@ closeAgentModal();
 switchNavTab('settings');
 return;
 }
+if (isExecuting) {
+showToast('全局流水线正在运行，请等待完成或停止后再单独追问');
+return;
+}
 const ag = agents.find(a => a.id === inspectedAgentId);
-if (!ag) return;
+if (!ag || ag.status === 'running') return;
 inp.value = '';
-const prefix = ag.output ? `${ag.output}\n\n--- [追问：${q}] ---\n` : `--- [指令：${q}] ---\n`;
+const prevOutput = ag.output || '';
+const prefix = prevOutput ? `${prevOutput}\n\n--- [追问：${q}] ---\n` : `--- [指令：${q}] ---\n`;
 ag.status = 'running';
 renderPipelineCards();
 syncHeaderAndMetrics();
 try {
-const prompt = ag.output
-? `你之前的输出如下：\n${ag.output}\n\n现在用户的补充指令/追问是：\n${q}`
+const prompt = prevOutput
+? `你之前的输出如下：\n${prevOutput}\n\n现在用户的补充指令/追问是：\n${q}`
 : q;
 const res = await requestLLM({
 systemPrompt: ag.systemPrompt,
@@ -2604,6 +2664,7 @@ document.getElementById('modalAgOutput').textContent = ag.output;
 });
 ag.status = 'done';
 ag.output = prefix + res.content;
+artifactStore[ag.id] = ag.output;
 ag.latencyMs += res.latencyMs;
 ag.tokens += res.tokens;
 cumulativeTokens += res.tokens;
@@ -2611,7 +2672,8 @@ cumulativeLatencyMs += res.latencyMs;
 document.getElementById('modalAgOutput').textContent = ag.output;
 appendLog('DIRECT_OK', `${ag.name} 完成定向回复 (${res.tokens} tok)`, ag.color);
 } catch (err) {
-ag.status = 'error';
+ag.status = prevOutput ? 'done' : 'error';
+ag.output = prevOutput;
 document.getElementById('modalAgOutput').textContent = `${prefix}\n[调用失败]：${err.message}`;
 }
 renderPipelineCards();
@@ -2695,6 +2757,10 @@ showToast('已导出 claw.report.v1 JSON');
 });
 document.querySelectorAll('.squad-btn').forEach(btn => {
 btn.addEventListener('click', () => {
+if (isExecuting) {
+showToast('任务执行中，请先停止任务再切换编队');
+return;
+}
 const key = btn.getAttribute('data-squad');
 const tpl = SQUAD_TEMPLATES[key];
 if (!tpl) return;
@@ -2714,8 +2780,11 @@ document.querySelectorAll('.squad-btn').forEach(b => {
 b.className = 'squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-slate-300 border border-slate-800';
 });
 btn.className = 'squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+buildFiveAgentPlanes();
+layoutFivePlanes();
 renderAgentSettings();
 renderPipelineCards();
+renderLibrary();
 syncHeaderAndMetrics();
 showToast(`已切换为「${btn.textContent.trim()}」`);
 });
@@ -2759,8 +2828,11 @@ systemPrompt: prompt
 });
 document.getElementById('newAgentForm').reset();
 closeNewAgentModal();
+buildFiveAgentPlanes();
+layoutFivePlanes();
 renderAgentSettings();
 renderPipelineCards();
+renderLibrary();
 syncHeaderAndMetrics();
 showToast(`已添加智能体：${name}`);
 });
@@ -2949,6 +3021,13 @@ syncHeaderAndMetrics();
 switchNavTab('topology');
 resizeStageCanvas();
 renderTopologyLoop();
+const resetHorizontalScroll = () => {
+  if (window.scrollX !== 0) window.scrollTo(0, window.scrollY);
+  if (document.documentElement.scrollLeft !== 0) document.documentElement.scrollLeft = 0;
+  if (document.body.scrollLeft !== 0) document.body.scrollLeft = 0;
+};
+window.addEventListener('scroll', resetHorizontalScroll, { passive: true });
+document.addEventListener('focusout', () => setTimeout(resetHorizontalScroll, 60));
 }
 if (document.readyState === 'loading') {
 document.addEventListener('DOMContentLoaded', initNexusApp);

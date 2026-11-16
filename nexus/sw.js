@@ -1,6 +1,6 @@
-// NexusAI PWA Service Worker — app shell cache (stale-while-revalidate for GET).
-// API calls are POST and are never intercepted.
-const CACHE = 'nexusai-v13';
+// NexusAI PWA Service Worker — app shell cache (stale-while-revalidate for static assets).
+// API calls (POST) and dynamic GitHub API lookups are never served stale from cache.
+const CACHE = 'nexusai-v14';
 const SHELL = [
   './',
   './index.html',
@@ -24,6 +24,13 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  let url;
+  try { url = new URL(e.request.url); } catch (_) { return; }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  if (url.hostname === 'api.github.com' || url.hostname === 'raw.githubusercontent.com') {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((hit) => {
       const net = fetch(e.request)
