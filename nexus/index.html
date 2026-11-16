@@ -302,6 +302,95 @@ Claw-Code 自动内核与 API 调度日志
 <div id="testResultBanner" class="hidden rounded-xl p-3 text-xs font-mono leading-relaxed border"></div>
 </div>
 </section>
+<section id="tabViewLibrary" class="hidden space-y-3">
+<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="text-sm font-bold text-white">📚 共享扩展库</h3>
+<span id="libCounts" class="text-[11px] text-slate-400"></span>
+</div>
+<p class="text-[11px] text-slate-400 leading-relaxed">技能、MCP 服务器与指令维护一份，按智能体分配、全线生效。平时只把名录注入提示词（省 token），智能体用到时才加载全文或真正调用工具。分配按当前编队的位置（总控/调研/研发/审计/汇总）生效，切换编队后同位置自动沿用。</p>
+<div class="flex gap-2">
+<button id="libExportBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">⬆️ 导出配置</button>
+<button id="libImportBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">⬇️ 导入配置</button>
+</div>
+<div id="libIoBox" class="hidden space-y-2">
+<textarea id="libIoText" rows="5" placeholder="导出时配置 JSON 会出现在这里；导入时把 JSON 粘贴到这里" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-100 font-mono focus:outline-none focus:border-cyan-500"></textarea>
+<div class="flex gap-2">
+<button id="libIoDoImportBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">执行导入</button>
+<button id="libIoCopyBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition">复制文本</button>
+</div>
+</div>
+</div>
+
+<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
+<h3 class="text-sm font-bold text-white">✨ 技能（Skills）</h3>
+<div id="libSkillList" class="space-y-2"></div>
+<div class="space-y-2 border-t border-slate-800 pt-3">
+<input id="libSkillName" type="text" placeholder="技能名（智能体用 [[SKILL:技能名]] 加载）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+<input id="libSkillDesc" type="text" placeholder="一句话描述（进名录，帮智能体判断何时用）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+<textarea id="libSkillBody" rows="6" placeholder="技能正文：规程、清单、模板等。也可以把整份 SKILL.md 粘到这里，下面的「从粘贴导入」会自动拆出名字、描述和正文。" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"></textarea>
+<div>
+<p class="text-[11px] font-semibold text-slate-300 mb-1">分配给</p>
+<div id="libSkillAgents" class="flex flex-wrap gap-2"></div>
+</div>
+<input id="libSkillEditId" type="hidden">
+<div class="flex gap-2">
+<button id="libSkillSaveBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">💾 保存技能</button>
+<button id="libSkillPasteBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition">📋 从粘贴的 SKILL.md 导入</button>
+<button id="libSkillCancelBtn" type="button" class="hidden py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition">取消编辑</button>
+</div>
+<div class="flex gap-2">
+<input id="libSkillImportUrl" type="text" placeholder="单个 SKILL.md 的 raw 链接" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+<button id="libSkillImportBtn" type="button" class="py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 transition">导入</button>
+</div>
+<div class="flex gap-2">
+<input id="libRepoUrl" type="text" placeholder="GitHub 仓库地址（批量导入仓库内全部 SKILL.md）" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+<button id="libRepoImportBtn" type="button" class="py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 transition">批量导入</button>
+</div>
+<p id="libSkillMsg" class="text-[11px] text-slate-400"></p>
+</div>
+</div>
+
+<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
+<h3 class="text-sm font-bold text-white">🔌 MCP 服务器</h3>
+<div id="libMcpList" class="space-y-2"></div>
+<div class="space-y-2 border-t border-slate-800 pt-3">
+<input id="libMcpName" type="text" placeholder="服务器名（智能体用 [[MCP:服务器名:工具名:{参数}]] 调用）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+<input id="libMcpUrl" type="text" placeholder="服务器地址（https://…，Streamable HTTP 类 MCP）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+<input id="libMcpToken" type="password" placeholder="访问令牌（可选，只存本机浏览器）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+<div>
+<p class="text-[11px] font-semibold text-slate-300 mb-1">分配给</p>
+<div id="libMcpAgents" class="flex flex-wrap gap-2"></div>
+</div>
+<input id="libMcpEditId" type="hidden">
+<div class="flex gap-2">
+<button id="libMcpSaveBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">💾 保存服务器</button>
+<button id="libMcpTestBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition">🔌 测试连接</button>
+<button id="libMcpCancelBtn" type="button" class="hidden py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition">取消编辑</button>
+</div>
+<p class="text-[11px] text-slate-500 leading-relaxed">调用经 hghub-proxy 的 /mcp 中转转发；需先部署新版 Worker（与 /browse 同一个文件）。电脑本地跑的 stdio 型 MCP 网页版接不了。</p>
+<p id="libMcpMsg" class="text-[11px] text-slate-400"></p>
+</div>
+</div>
+
+<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
+<h3 class="text-sm font-bold text-white">📜 指令（Instructions）</h3>
+<div id="libInstList" class="space-y-2"></div>
+<div class="space-y-2 border-t border-slate-800 pt-3">
+<input id="libInstName" type="text" placeholder="指令名（如：团队代码风格）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+<textarea id="libInstText" rows="4" placeholder="指令正文：会原样注入被分配智能体的上下文（如：所有代码必须带中文注释）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"></textarea>
+<div>
+<p class="text-[11px] font-semibold text-slate-300 mb-1">分配给</p>
+<div id="libInstAgents" class="flex flex-wrap gap-2"></div>
+</div>
+<input id="libInstEditId" type="hidden">
+<div class="flex gap-2">
+<button id="libInstSaveBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">💾 保存指令</button>
+<button id="libInstCancelBtn" type="button" class="hidden py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition">取消编辑</button>
+</div>
+</div>
+</div>
+</section>
 </main>
 <nav id="bottomNavBar" class="ios-tabbar fixed bottom-0 left-0 right-0 h-[48px] z-50 max-w-[1120px] mx-auto px-2 py-1 flex items-center justify-around">
 <button type="button" data-nav="workspace" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-cyan-400">
@@ -319,6 +408,10 @@ Claw-Code 自动内核与 API 调度日志
 <button type="button" data-nav="settings" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
 <span class="text-base leading-none">⚙️</span>
 <span class="text-[10px] font-semibold mt-1">API设置</span>
+</button>
+<button type="button" data-nav="library" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
+<span class="text-base leading-none">📚</span>
+<span class="text-[10px] font-semibold mt-1">扩展库</span>
 </button>
 </nav>
 </div>
@@ -466,6 +559,454 @@ const KITESURF_RUN_FETCH_LIMIT = 5;
 const kitesurfCache = {};
 let kitesurfFetchCount = 0;
 let prefetchedPages = [];
+// ===== 共享扩展库（技能 Skills / MCP / 指令 Instructions）=====
+// 设计照 Magpie 的 Library：维护一份、按智能体分配、全线生效。
+// 平时只注入名录（省 token）；[[SKILL:名]] / [[MCP:服务器:工具:{参数}]] 标记在节点完成时解析，
+// 与 [[FETCH:]] / [[ATTACH_CODE:]] 同一套机制。数据只存本机 localStorage。
+const LIB_SKILLS_KEY = 'nexusai_skills';
+const LIB_MCP_KEY = 'nexusai_mcp_servers';
+const LIB_INST_KEY = 'nexusai_instructions';
+const SKILL_BODY_CAP = 9000;
+const SKILL_PER_AGENT_LIMIT = 2;
+const MCP_RESULT_CAP = 8000;
+const MCP_RUN_CALL_LIMIT = 5;
+const MCP_RELAY_URL = 'https://hghub-proxy.liguohao770801114.workers.dev/mcp';
+const LIB_LB = String.fromCharCode(12304);
+const LIB_RB = String.fromCharCode(12305);
+let libSkills = [];
+let libMcpServers = [];
+let libInstructions = [];
+let libSkillLoads = {};
+let mcpCallCount = 0;
+let mcpToolIndex = {};
+let mcpSessions = {};
+
+function libUid(prefix) { return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);}
+function libLoadArr(key) { try { const v = localStorage.getItem(key); if (v) { const p = JSON.parse(v); if (Array.isArray(p)) return p;}} catch (e) {} return [];}
+function libSave() { try { localStorage.setItem(LIB_SKILLS_KEY, JSON.stringify(libSkills)); localStorage.setItem(LIB_MCP_KEY, JSON.stringify(libMcpServers)); localStorage.setItem(LIB_INST_KEY, JSON.stringify(libInstructions));} catch (e) {}}
+function libSeedSkills() {
+return [
+{ id: libUid('sk'), name: '中文技术文档总结', desc: '总结英文/中文技术文档页面时用：分层提炼、保留数字与限制条件', body: '## 技能：中文技术文档总结\n按以下规程总结技术文档：\n1. 一句话定位：这是什么产品/能力，处于什么阶段（beta/正式）。\n2. 核心要点 3–7 条：解决什么问题、关键能力、使用方式、限制条件。\n3. 数字必须逐字核对原文（性能、配额、价格、覆盖率），不得四舍五入或臆造。\n4. 单列「做不到/不支持」清单。\n5. 接入方式逐项列全（API、绑定、协议、工具）。\n6. 只陈述页面明示内容；页面未提及的写「页面未明确」，禁止引入外部推断。', agents: ['agent-2'], enabled: true},
+{ id: libUid('sk'), name: '代码审计清单', desc: '审计代码时用：按注入/越权/竞态/数据安全逐项排查，只出问题清单', body: '## 技能：代码审计清单\n逐项排查并只报告命中的问题（级别 P0/P1/P2 + 位置 + 一句话说明）：\n1. 注入：SQL/命令/模板注入、未转义的用户输入拼接。\n2. 越权：缺失的权限校验、IDOR、路径穿越。\n3. 竞态：先查后写、非原子计数、文件覆盖。\n4. 数据安全：删除/更新是否可恢复、ID 是否复用、持久化是否会复活已删数据。\n5. 边界：空输入、超长输入、损坏的数据文件、编码问题。\n6. 密钥与日志：硬编码密钥、敏感信息进日志。\n未命中的项不要复述，不要重写代码，只出问题清单。', agents: ['agent-4'], enabled: true},
+{ id: libUid('sk'), name: '提示词优化', desc: '需要撰写或改进给其他智能体/模型的提示词时用', body: '## 技能：提示词优化\n优化提示词时遵循：\n1. 先定输出契约：格式、长度、必须包含与禁止包含的内容，写在提示词前部。\n2. 用结构化分段（角色/任务/约束/输出格式/示例），一段一个主题。\n3. 一次只针对一个失败模式改一处，避免多处同时改动无法归因。\n4. 给出可判定的验收标准，而不是「写得好一点」这类模糊要求。\n5. 需要引用外部材料时，要求标注来源，禁止凭空编造。', agents: ['all'], enabled: true}
+];
+}
+try {
+if (localStorage.getItem(LIB_SKILLS_KEY) === null) { libSkills = libSeedSkills(); try { localStorage.setItem(LIB_SKILLS_KEY, JSON.stringify(libSkills));} catch (e) {}}
+else libSkills = libLoadArr(LIB_SKILLS_KEY);
+libMcpServers = libLoadArr(LIB_MCP_KEY);
+libInstructions = libLoadArr(LIB_INST_KEY);
+} catch (e) {}
+
+function libAssigned(item, agentId) {
+if (!item || item.enabled === false) return false;
+const a = (item.agents && item.agents.length)? item.agents: ['all'];
+if (!agentId) return true;
+return a.indexOf('all') >= 0 || a.indexOf(agentId) >= 0;
+}
+function libEscapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');}
+
+function buildLibraryContext(forAgentId) {
+let out = '';
+const insts = libInstructions.filter(i => libAssigned(i, forAgentId));
+if (insts.length) out += '\n' + LIB_LB + '共享指令' + LIB_RB + '\n' + insts.map(i => i.text).join('\n') + '\n';
+const skills = libSkills.filter(s => libAssigned(s, forAgentId));
+if (skills.length) out += '\n' + LIB_LB + '技能库' + LIB_RB + '你可按需加载以下技能：需要某个技能的规程时，在产出中单独一行写 [[SKILL:技能名]]，系统会把技能全文替换到标记处；不要凭空编造技能内容。\n' + skills.map(s => '- ' + s.name + '：' + (s.desc || '')).join('\n') + '\n';
+const toolLines = [];
+libMcpServers.filter(sv => libAssigned(sv, forAgentId)).forEach(sv => {
+(mcpToolIndex[sv.name] || []).forEach(t => toolLines.push('- ' + sv.name + ' / ' + t.name + '：' + (t.description || '')));
+});
+if (toolLines.length) out += '\n' + LIB_LB + 'MCP 工具' + LIB_RB + '需要调用外部工具时，在产出中单独一行写 [[MCP:服务器名:工具名:{"参数名":值}]]，系统会执行并把结果替换到标记处。可用工具：\n' + toolLines.join('\n') + '\n';
+return out;
+}
+
+async function resolveSkillMarkers(output, agentId) {
+const re = /\[\[SKILL:([^\]]+)\]\]/g;
+const names = [...new Set([...String(output || '').matchAll(re)].map(m => m[1].trim()))];
+if (!names.length) return output;
+let result = String(output);
+for (const name of names) {
+const sk = libSkills.find(s => s.name === name);
+let replacement;
+if (!sk || sk.enabled === false) replacement = '（技能库中没有已启用的技能「' + name + '」，已跳过）';
+else if (!libAssigned(sk, agentId)) replacement = '（技能「' + name + '」未分配给当前智能体，已跳过）';
+else {
+libSkillLoads[agentId] = libSkillLoads[agentId] || 0;
+if (libSkillLoads[agentId] >= SKILL_PER_AGENT_LIMIT) replacement = '（本次运行该智能体加载技能次数已达上限，未加载「' + name + '」）';
+else {
+libSkillLoads[agentId]++;
+let body = sk.body || '';
+if (body.length > SKILL_BODY_CAP) body = body.slice(0, SKILL_BODY_CAP) + '\n...（技能正文过长，已截断至 ' + SKILL_BODY_CAP + ' 字）';
+replacement = '\n' + LIB_LB + '技能：' + sk.name + LIB_RB + '\n' + body + '\n';
+}
+}
+result = result.replace(new RegExp('\\[\\[SKILL:\\s*' + libEscapeRegExp(name) + '\\s*\\]\\]', 'g'), () => replacement);
+}
+return result;
+}
+
+function mcpParseBody(text, contentType) {
+const t = String(text || '');
+if ((contentType || '').indexOf('text/event-stream') >= 0 || /^data:/m.test(t)) {
+let last = null;
+t.split(/\r?\n/).forEach(line => { if (line.indexOf('data:') === 0) { try { last = JSON.parse(line.slice(5).trim());} catch (e) {}}});
+return last;
+}
+try { return JSON.parse(t);} catch (e) { return null;}
+}
+async function mcpRelayCall(server, rpcPayload, sessionId) {
+const headers = {};
+if (server.token) headers['Authorization'] = 'Bearer ' + server.token;
+if (sessionId) headers['Mcp-Session-Id'] = sessionId;
+const resp = await fetch(MCP_RELAY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json'}, body: JSON.stringify({ url: server.url, headers: headers, body: rpcPayload})});
+const data = await resp.json().catch(() => null);
+if (!data) throw new Error('MCP 中转无响应（HTTP ' + resp.status + '），请确认已部署含 /mcp 的新版 Worker');
+if (data.error) throw new Error(data.error);
+return data;
+}
+async function mcpRequest(server, method, params) {
+if (!(server.name in mcpSessions)) {
+mcpSessions[server.name] = null;
+try {
+const init = await mcpRelayCall(server, { jsonrpc: '2.0', id: 'init', method: 'initialize', params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'NexusAI', version: '10'}}}, null);
+if (init.sessionId) mcpSessions[server.name] = init.sessionId;
+try { await mcpRelayCall(server, { jsonrpc: '2.0', method: 'notifications/initialized'}, mcpSessions[server.name]);} catch (e) {}
+} catch (e) {}
+}
+const data = await mcpRelayCall(server, { jsonrpc: '2.0', id: 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), method: method, params: params || {}}, mcpSessions[server.name]);
+if (data.status === 404 && data.sessionId === '') { /* 会话可能已失效，下次运行重建 */}
+const msg = mcpParseBody(data.body, data.contentType);
+if (!msg) throw new Error('MCP 服务器返回无法解析（HTTP ' + data.status + '）');
+if (msg.error) throw new Error('MCP 错误：' + (msg.error.message || JSON.stringify(msg.error)));
+return msg.result;
+}
+async function prefetchMcpTools() {
+mcpToolIndex = {};
+mcpSessions = {};
+mcpCallCount = 0;
+libSkillLoads = {};
+const active = libMcpServers.filter(sv => sv.enabled!== false);
+for (const sv of active) {
+try {
+const result = await mcpRequest(sv, 'tools/list', {});
+const tools = (result && result.tools) || [];
+mcpToolIndex[sv.name] = tools.map(t => ({ name: t.name, description: String(t.description || '').replace(/\s+/g, ' ').slice(0, 120)}));
+appendLog('MCP', '服务器「' + sv.name + '」已连接，' + tools.length + ' 个工具可用', '#22D3EE');
+} catch (e) {
+mcpToolIndex[sv.name] = [];
+appendLog('MCP', '服务器「' + sv.name + '」连接失败：' + e.message + '（已跳过，不影响运行）', '#F59E0B');
+}
+}
+}
+async function resolveMcpMarkers(output, agentId) {
+const re = /\[\[MCP:([^\]]+)\]\]/g;
+const inners = [...new Set([...String(output || '').matchAll(re)].map(m => m[1]))];
+if (!inners.length) return output;
+let result = String(output);
+for (const inner of inners) {
+const marker = '[[MCP:' + inner + ']]';
+let replacement;
+const braceIdx = inner.indexOf('{');
+const head = (braceIdx >= 0? inner.slice(0, braceIdx): inner).replace(/:$/, '');
+const argsStr = braceIdx >= 0? inner.slice(braceIdx): '{}';
+const parts = head.split(':');
+const serverName = (parts[0] || '').trim();
+const toolName = (parts[1] || '').trim();
+const sv = libMcpServers.find(s => s.name === serverName);
+if (!sv || sv.enabled === false) replacement = '（未配置已启用的 MCP 服务器「' + serverName + '」，已跳过）';
+else if (!libAssigned(sv, agentId)) replacement = '（MCP 服务器「' + serverName + '」未分配给当前智能体，已跳过）';
+else if (!toolName) replacement = '（MCP 标记缺少工具名，已跳过）';
+else if (mcpCallCount >= MCP_RUN_CALL_LIMIT) replacement = '（本次运行 MCP 调用次数已达上限，已跳过）';
+else {
+mcpCallCount++;
+try {
+let args = {};
+try { args = JSON.parse(argsStr);} catch (e) { throw new Error('参数 JSON 解析失败');}
+const r = await mcpRequest(sv, 'tools/call', { name: toolName, arguments: args});
+let text = '';
+if (r && Array.isArray(r.content)) text = r.content.map(c => (c && c.text) || '').join('\n');
+else text = JSON.stringify(r);
+if (text.length > MCP_RESULT_CAP) text = text.slice(0, MCP_RESULT_CAP) + '\n...（结果过长，已截断至 ' + MCP_RESULT_CAP + ' 字）';
+replacement = '\n' + LIB_LB + 'MCP 结果 ' + serverName + ' / ' + toolName + LIB_RB + '\n' + text + '\n';
+} catch (e) { replacement = '（MCP 调用 ' + serverName + ' / ' + toolName + ' 失败：' + e.message + '，已跳过）';}
+}
+result = result.split(marker).join(replacement);
+}
+return result;
+}
+
+function parseSkillMarkdown(md) {
+const text = String(md || '');
+let name = '', desc = '', body = text;
+const m = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+if (m) {
+const fm = m[1];
+const nm = fm.match(/^name:\s*(.+)$/m); if (nm) name = nm[1].trim().replace(/^["']|["']$/g, '');
+const dm = fm.match(/^description:\s*(.+)$/m); if (dm) desc = dm[1].trim().replace(/^["']|["']$/g, '');
+body = text.slice(m[0].length);
+}
+return { name: name, desc: desc, body: body.trim()};
+}
+function libUpsertSkill(parsed) {
+const existing = libSkills.find(s => s.name === parsed.name);
+if (existing) { existing.desc = parsed.desc || existing.desc; existing.body = parsed.body; existing.enabled = true;}
+else libSkills.push({ id: libUid('sk'), name: parsed.name, desc: parsed.desc || '', body: parsed.body, agents: ['all'], enabled: true});
+libSave();
+}
+async function libFetchText(url) {
+const r = await fetch(url);
+if (!r.ok) throw new Error('HTTP ' + r.status);
+return await r.text();
+}
+async function importSkillFromUrl(url) {
+const md = await libFetchText(url);
+const p = parseSkillMarkdown(md);
+if (!p.name) { const seg = String(url).split('/').filter(Boolean); p.name = seg.length >= 2? seg[seg.length - 2]: 'imported-skill';}
+if (!p.body) throw new Error('文件内容为空');
+libUpsertSkill(p);
+return p.name;
+}
+async function importSkillsFromRepo(repoUrl) {
+const m = String(repoUrl || '').match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)(?:\/tree\/([^\/\s]+)(?:\/([^\s#?]*))?)?/);
+if (!m) throw new Error('无法识别 GitHub 仓库地址');
+const owner = m[1];
+const repo = m[2].replace(/\.git$/, '');
+let branch = m[3] || '';
+const sub = (m[4] || '').replace(/\/$/, '');
+if (!branch) {
+const infoResp = await fetch('https://api.github.com/repos/' + owner + '/' + repo);
+if (!infoResp.ok) throw new Error('仓库读取失败 HTTP ' + infoResp.status);
+const info = await infoResp.json();
+branch = info.default_branch || 'main';
+}
+const treeResp = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/git/trees/' + encodeURIComponent(branch) + '?recursive=1');
+if (!treeResp.ok) throw new Error('仓库文件树读取失败 HTTP ' + treeResp.status);
+const tj = await treeResp.json();
+const paths = (tj.tree || []).filter(t => t.type === 'blob' && /(^|\/)SKILL\.md$/i.test(t.path) && (!sub || t.path.indexOf(sub) === 0)).map(t => t.path);
+if (!paths.length) throw new Error('仓库里没找到 SKILL.md');
+let ok = 0;
+for (const p of paths) {
+try { await importSkillFromUrl('https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + p); ok++;} catch (e) {}
+}
+if (!ok) throw new Error('找到 ' + paths.length + ' 个 SKILL.md，但全部导入失败');
+return ok;
+}
+function libExportJson() {
+return JSON.stringify({ nexusaiLibrary: 1, skills: libSkills, mcpServers: libMcpServers, instructions: libInstructions}, null, 2);
+}
+function libImportJson(text) {
+const p = JSON.parse(String(text || ''));
+if (!p || typeof p!== 'object') throw new Error('不是有效的配置 JSON');
+if (Array.isArray(p.skills)) libSkills = p.skills;
+if (Array.isArray(p.mcpServers)) libMcpServers = p.mcpServers;
+if (Array.isArray(p.instructions)) libInstructions = p.instructions;
+libSave();
+}
+
+// ===== 扩展库界面 =====
+function libAgentName(agentId) {
+if (agentId === 'all') return '全部智能体';
+const ag = agents.find(a => a.id === agentId);
+return ag? ag.name: agentId;
+}
+function libAssignSummary(item) {
+const a = (item.agents && item.agents.length)? item.agents: ['all'];
+if (a.indexOf('all') >= 0) return '全部智能体';
+return a.map(libAgentName).join('、');
+}
+function libRenderAgentChecks(containerId, selected) {
+const box = document.getElementById(containerId);
+if (!box) return;
+const sel = (selected && selected.length)? selected: ['all'];
+let html = '<label class="flex items-center gap-1 text-[11px] text-slate-200 bg-slate-800 rounded-lg px-2 py-1"><input type="checkbox" value="all"' + (sel.indexOf('all') >= 0? ' checked': '') + '> 全部</label>';
+agents.forEach(ag => { html += '<label class="flex items-center gap-1 text-[11px] text-slate-200 bg-slate-800 rounded-lg px-2 py-1"><input type="checkbox" value="' + ag.id + '"' + (sel.indexOf(ag.id) >= 0? ' checked': '') + '> ' + ag.name + '</label>';});
+box.innerHTML = html;
+}
+function libReadAgentChecks(containerId) {
+const box = document.getElementById(containerId);
+if (!box) return ['all'];
+const vals = [...box.querySelectorAll('input[type=checkbox]:checked')].map(i => i.value);
+return vals.length? vals: ['all'];
+}
+function libItemRow(kind, item) {
+const on = item.enabled!== false;
+const desc = kind === 'inst'? String(item.text || '').slice(0, 60): (item.desc || (kind === 'mcp'? item.url: ''));
+return '<div class="flex items-start justify-between gap-2 rounded-xl bg-slate-950 border border-slate-800 px-3 py-2">'
++ '<div class="min-w-0"><p class="text-xs font-bold text-white truncate">' + libEsc(item.name) + (on? '': ' <span class="text-slate-500 font-normal">（已停用）</span>') + '</p>'
++ '<p class="text-[11px] text-slate-400 truncate">' + libEsc(desc) + '</p>'
++ '<p class="text-[10px] text-slate-500">分配：' + libEsc(libAssignSummary(item)) + '</p></div>'
++ '<div class="flex gap-1 shrink-0">'
++ '<button type="button" data-libact="edit" data-kind="' + kind + '" data-id="' + item.id + '" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-cyan-300">编辑</button>'
++ '<button type="button" data-libact="toggle" data-kind="' + kind + '" data-id="' + item.id + '" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-slate-300">' + (on? '停用': '启用') + '</button>'
++ '<button type="button" data-libact="del" data-kind="' + kind + '" data-id="' + item.id + '" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-rose-300">删除</button>'
++ '</div></div>';
+}
+function libEsc(s) { return String(s == null? '': s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');}
+function libCollection(kind) { return kind === 'skill'? libSkills: (kind === 'mcp'? libMcpServers: libInstructions);}
+function renderLibrary() {
+const counts = document.getElementById('libCounts');
+if (!counts) return;
+counts.textContent = libSkills.length + ' 技能 · ' + libMcpServers.length + ' MCP · ' + libInstructions.length + ' 指令';
+document.getElementById('libSkillList').innerHTML = libSkills.length? libSkills.map(s => libItemRow('skill', s)).join(''): '<p class="text-[11px] text-slate-500">还没有技能，在下面添加或导入。</p>';
+document.getElementById('libMcpList').innerHTML = libMcpServers.length? libMcpServers.map(s => libItemRow('mcp', s)).join(''): '<p class="text-[11px] text-slate-500">还没有 MCP 服务器，在下面添加。</p>';
+document.getElementById('libInstList').innerHTML = libInstructions.length? libInstructions.map(s => libItemRow('inst', s)).join(''): '<p class="text-[11px] text-slate-500">还没有指令，在下面添加。</p>';
+if (!document.getElementById('libSkillEditId').value) libRenderAgentChecks('libSkillAgents', ['all']);
+if (!document.getElementById('libMcpEditId').value) libRenderAgentChecks('libMcpAgents', ['all']);
+if (!document.getElementById('libInstEditId').value) libRenderAgentChecks('libInstAgents', ['all']);
+}
+function libFillForm(kind, item) {
+if (kind === 'skill') {
+document.getElementById('libSkillEditId').value = item.id;
+document.getElementById('libSkillName').value = item.name || '';
+document.getElementById('libSkillDesc').value = item.desc || '';
+document.getElementById('libSkillBody').value = item.body || '';
+libRenderAgentChecks('libSkillAgents', item.agents);
+document.getElementById('libSkillCancelBtn').classList.remove('hidden');
+} else if (kind === 'mcp') {
+document.getElementById('libMcpEditId').value = item.id;
+document.getElementById('libMcpName').value = item.name || '';
+document.getElementById('libMcpUrl').value = item.url || '';
+document.getElementById('libMcpToken').value = item.token || '';
+libRenderAgentChecks('libMcpAgents', item.agents);
+document.getElementById('libMcpCancelBtn').classList.remove('hidden');
+} else {
+document.getElementById('libInstEditId').value = item.id;
+document.getElementById('libInstName').value = item.name || '';
+document.getElementById('libInstText').value = item.text || '';
+libRenderAgentChecks('libInstAgents', item.agents);
+document.getElementById('libInstCancelBtn').classList.remove('hidden');
+}
+}
+function libClearForm(kind) {
+if (kind === 'skill') {
+document.getElementById('libSkillEditId').value = '';
+document.getElementById('libSkillName').value = '';
+document.getElementById('libSkillDesc').value = '';
+document.getElementById('libSkillBody').value = '';
+libRenderAgentChecks('libSkillAgents', ['all']);
+document.getElementById('libSkillCancelBtn').classList.add('hidden');
+} else if (kind === 'mcp') {
+document.getElementById('libMcpEditId').value = '';
+document.getElementById('libMcpName').value = '';
+document.getElementById('libMcpUrl').value = '';
+document.getElementById('libMcpToken').value = '';
+libRenderAgentChecks('libMcpAgents', ['all']);
+document.getElementById('libMcpCancelBtn').classList.add('hidden');
+} else {
+document.getElementById('libInstEditId').value = '';
+document.getElementById('libInstName').value = '';
+document.getElementById('libInstText').value = '';
+libRenderAgentChecks('libInstAgents', ['all']);
+document.getElementById('libInstCancelBtn').classList.add('hidden');
+}
+}
+function bindLibraryUI() {
+const sec = document.getElementById('tabViewLibrary');
+if (!sec || sec.dataset.bound) return;
+sec.dataset.bound = '1';
+document.querySelector('[data-nav="library"]').addEventListener('click', () => renderLibrary());
+sec.addEventListener('click', (ev) => {
+const btn = ev.target.closest('[data-libact]');
+if (!btn) return;
+const kind = btn.getAttribute('data-kind');
+const id = btn.getAttribute('data-id');
+const col = libCollection(kind);
+const item = col.find(x => x.id === id);
+if (!item) return;
+const act = btn.getAttribute('data-libact');
+if (act === 'edit') libFillForm(kind, item);
+else if (act === 'toggle') { item.enabled = item.enabled === false? true: false; libSave(); renderLibrary();}
+else if (act === 'del') { const idx = col.indexOf(item); if (idx >= 0) col.splice(idx, 1); libSave(); renderLibrary(); showToast('已删除：' + item.name);}
+});
+document.getElementById('libSkillSaveBtn').addEventListener('click', () => {
+const name = document.getElementById('libSkillName').value.trim();
+const body = document.getElementById('libSkillBody').value;
+if (!name) { showToast('技能名不能为空'); return;}
+if (!body.trim()) { showToast('技能正文不能为空'); return;}
+const editId = document.getElementById('libSkillEditId').value;
+const data = { name: name, desc: document.getElementById('libSkillDesc').value.trim(), body: body, agents: libReadAgentChecks('libSkillAgents')};
+if (editId) { const it = libSkills.find(s => s.id === editId); if (it) Object.assign(it, data);}
+else libSkills.push(Object.assign({ id: libUid('sk'), enabled: true}, data));
+libSave(); libClearForm('skill'); renderLibrary(); showToast('技能已保存：' + name);
+});
+document.getElementById('libSkillPasteBtn').addEventListener('click', () => {
+const raw = document.getElementById('libSkillBody').value;
+if (!raw.trim()) { showToast('先把 SKILL.md 粘到正文框里'); return;}
+const p = parseSkillMarkdown(raw);
+if (p.name) document.getElementById('libSkillName').value = p.name;
+if (p.desc) document.getElementById('libSkillDesc').value = p.desc;
+document.getElementById('libSkillBody').value = p.body;
+showToast(p.name? '已拆出技能：' + p.name: '没读到 frontmatter，请手动填名字');
+});
+document.getElementById('libSkillCancelBtn').addEventListener('click', () => libClearForm('skill'));
+document.getElementById('libSkillImportBtn').addEventListener('click', async () => {
+const url = document.getElementById('libSkillImportUrl').value.trim();
+const msg = document.getElementById('libSkillMsg');
+if (!url) { showToast('先填 SKILL.md 的 raw 链接'); return;}
+msg.textContent = '正在导入…';
+try { const n = await importSkillFromUrl(url); msg.textContent = '已导入技能：' + n; renderLibrary();}
+catch (e) { msg.textContent = '导入失败：' + e.message;}
+});
+document.getElementById('libRepoImportBtn').addEventListener('click', async () => {
+const url = document.getElementById('libRepoUrl').value.trim();
+const msg = document.getElementById('libSkillMsg');
+if (!url) { showToast('先填 GitHub 仓库地址'); return;}
+msg.textContent = '正在扫描仓库并批量导入…';
+try { const n = await importSkillsFromRepo(url); msg.textContent = '已从仓库导入 ' + n + ' 个技能'; renderLibrary();}
+catch (e) { msg.textContent = '批量导入失败：' + e.message;}
+});
+document.getElementById('libMcpSaveBtn').addEventListener('click', () => {
+const name = document.getElementById('libMcpName').value.trim();
+const url = document.getElementById('libMcpUrl').value.trim();
+if (!name) { showToast('服务器名不能为空'); return;}
+if (!/^https:\/\//i.test(url)) { showToast('服务器地址必须是 https:// 开头'); return;}
+const editId = document.getElementById('libMcpEditId').value;
+const data = { name: name, url: url, token: document.getElementById('libMcpToken').value.trim(), agents: libReadAgentChecks('libMcpAgents')};
+if (editId) { const it = libMcpServers.find(s => s.id === editId); if (it) Object.assign(it, data);}
+else libMcpServers.push(Object.assign({ id: libUid('mcp'), enabled: true}, data));
+libSave(); libClearForm('mcp'); renderLibrary(); showToast('MCP 服务器已保存：' + name);
+});
+document.getElementById('libMcpTestBtn').addEventListener('click', async () => {
+const msg = document.getElementById('libMcpMsg');
+const name = document.getElementById('libMcpName').value.trim();
+const url = document.getElementById('libMcpUrl').value.trim();
+if (!name ||!/^https:\/\//i.test(url)) { showToast('先填好服务器名和 https 地址'); return;}
+const sv = { name: name, url: url, token: document.getElementById('libMcpToken').value.trim()};
+msg.textContent = '正在连接…';
+try {
+delete mcpSessions[name];
+const result = await mcpRequest(sv, 'tools/list', {});
+const tools = (result && result.tools) || [];
+msg.textContent = '连接成功：' + tools.length + ' 个工具' + (tools.length? '（' + tools.slice(0, 5).map(t => t.name).join('、') + (tools.length > 5? '…': '') + '）': '');
+} catch (e) { msg.textContent = '连接失败：' + e.message;}
+});
+document.getElementById('libMcpCancelBtn').addEventListener('click', () => libClearForm('mcp'));
+document.getElementById('libInstSaveBtn').addEventListener('click', () => {
+const name = document.getElementById('libInstName').value.trim();
+const text = document.getElementById('libInstText').value;
+if (!name) { showToast('指令名不能为空'); return;}
+if (!text.trim()) { showToast('指令正文不能为空'); return;}
+const editId = document.getElementById('libInstEditId').value;
+const data = { name: name, text: text, agents: libReadAgentChecks('libInstAgents')};
+if (editId) { const it = libInstructions.find(s => s.id === editId); if (it) Object.assign(it, data);}
+else libInstructions.push(Object.assign({ id: libUid('in'), enabled: true}, data));
+libSave(); libClearForm('inst'); renderLibrary(); showToast('指令已保存：' + name);
+});
+document.getElementById('libInstCancelBtn').addEventListener('click', () => libClearForm('inst'));
+document.getElementById('libExportBtn').addEventListener('click', () => {
+document.getElementById('libIoBox').classList.remove('hidden');
+document.getElementById('libIoText').value = libExportJson();
+});
+document.getElementById('libImportBtn').addEventListener('click', () => {
+document.getElementById('libIoBox').classList.remove('hidden');
+document.getElementById('libIoText').focus();
+});
+document.getElementById('libIoDoImportBtn').addEventListener('click', () => {
+try { libImportJson(document.getElementById('libIoText').value); libClearForm('skill'); libClearForm('mcp'); libClearForm('inst'); renderLibrary(); showToast('配置已导入');}
+catch (e) { showToast('导入失败：' + e.message);}
+});
+document.getElementById('libIoCopyBtn').addEventListener('click', () => { copyText(document.getElementById('libIoText').value, '已复制配置 JSON');});
+}
 
 function kitesurfConfigured() {
 return Boolean((apiSettings.cfAccountId || '').trim() && (apiSettings.cfToken || '').trim());
@@ -1154,6 +1695,7 @@ compacted += '\n【联网抓取 · 任务页面预抓】\n' + prefetchedPages.ma
 if (kitesurfConfigured()) {
 compacted += '\n【联网抓取】如需读取某个具体网页的正文，在产出中单独一行写 [[FETCH:完整网址]]，系统会用 Kitesurf 渲染该页并把正文替换到标记处；不要凭空编造页面内容。\n';
 }
+compacted += buildLibraryContext(forAgentId);
 compacted += `\n${COMPACT_DIRECT_RESUME_INSTRUCTION}`;
 return compacted;
 }
@@ -1204,8 +1746,8 @@ ag.status = 'done';
 ag.output = res.content;
 artifactStore[ag.id] = res.content;
 ag.output = (ag.id === pipelineFinalAgentId) ? resolveAttachMarkers(ag.output) : ag.output.replace(/\[\[ATTACH_CODE:agent-\d+\]\]/g, '(代码原文见原节点报告)');
-if (ag.id!== pipelineFinalAgentId) { ag.output = await resolveFetchMarkers(ag.output);}
-else { ag.output = ag.output.replace(/\[\[FETCH:[^\]]+\]\]/g, '（最终交付节点不执行抓取）');}
+if (ag.id!== pipelineFinalAgentId) { ag.output = await resolveFetchMarkers(ag.output); ag.output = await resolveSkillMarkers(ag.output, ag.id); ag.output = await resolveMcpMarkers(ag.output, ag.id); }
+else { ag.output = ag.output.replace(/\[\[FETCH:[^\]]+\]\]/g, '（最终交付节点不执行抓取）').replace(/\[\[SKILL:[^\]]+\]\]/g, '（最终交付节点不加载技能）').replace(/\[\[MCP:[^\]]+\]\]/g, '（最终交付节点不调用工具）');}
 ag.latencyMs = res.latencyMs;
 ag.tokens = res.tokens;
 ag.cachedHit = Boolean(res.cachedHit);
@@ -1283,6 +1825,7 @@ appendLog('KITESURF', '抓取 ' + u + ' 失败：' + e.message + '（已跳过�
 } else if (extractUrls(taskText).length) {
 appendLog('KITESURF', '任务含网址但未配置 Cloudflare 凭证，智能体将看不到页面内容（可在 API设置 中填入）', '#F59E0B');
 }
+await prefetchMcpTools();
 const mode = document.getElementById('execModeSelect').value;
 let runList = agents.filter(a => a.enabled);
 if (mode === 'fast' && runList.length > 3) {
@@ -1311,7 +1854,7 @@ const hubId = runList[0].id;
 pipelineFinalAgentId = runList.length ? runList[runList.length - 1].id : null;
 const completedAgents = [];
 if (mode === 'parallel_fork' && runList.length >= 3) {
-const coordPrompt = `请针对以下用户任务，输出清晰的全局拆解方案与各子模块分工：\n\n${taskText}`;
+const coordPrompt = `请针对以下用户任务，输出清晰的全局拆解方案与各子模块分工：\n\n${taskText}` + buildLibraryContext(runList[0].id);
 const ok0 = await executeSingleAgentNode(runList[0], hubId, coordPrompt);
 if (ok0 && isExecuting) {
 completedAgents.push(runList[0]);
@@ -1340,7 +1883,7 @@ if (!isExecuting) break;
 const ag = runList[i];
 const upstreamCtx = buildAutoClawContext(taskText, completedAgents, ag.id);
 const promptForAgent = i === 0
-? `请针对以下用户任务，输出清晰的全局拆解方案与核心技术路线：\n\n${taskText}`
+? `请针对以下用户任务，输出清晰的全局拆解方案与核心技术路线：\n\n${taskText}` + buildLibraryContext(ag.id)
 : `以下是用户原始任务及上游智能体核心产出（已由 Claw-Code Trident 引擎自动压缩去噪），请以你的专业身份（${ag.name} - ${ag.role}）继续推进并输出核心交付成果：\n\n${upstreamCtx}`;
 const ok = await executeSingleAgentNode(ag, hubId, promptForAgent);
 if (!ok) break;
@@ -2114,7 +2657,8 @@ const views = {
 workspace: document.getElementById('tabViewWorkspace'),
 topology: document.getElementById('tabViewTopology'),
 agents: document.getElementById('tabViewAgents'),
-settings: document.getElementById('tabViewSettings')
+settings: document.getElementById('tabViewSettings'),
+library: document.getElementById('tabViewLibrary')
 };
 Object.keys(views).forEach(k => {
 if (k === tab) views[k].classList.remove('hidden');
@@ -2287,6 +2831,8 @@ document.getElementById('toggleFullImmersionBtn').addEventListener('click', () =
 });
 renderPipelineCards();
 renderAgentSettings();
+renderLibrary();
+bindLibraryUI();
 syncHeaderAndMetrics();
 switchNavTab('topology');
 resizeStageCanvas();
