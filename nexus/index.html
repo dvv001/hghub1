@@ -461,7 +461,7 @@ const promptCacheStore = new Map();
 const artifactStore = {};
 let pipelineFinalAgentId = null;
 // ===== Kitesurf 联网抓取（Cloudflare Browser Run · Quick Actions · browser=kitesurf）=====
-const KITESURF_PAGE_CAP = 5000;
+const KITESURF_PAGE_CAP = 12000;
 const KITESURF_RUN_FETCH_LIMIT = 5;
 const kitesurfCache = {};
 let kitesurfFetchCount = 0;
@@ -480,6 +480,25 @@ u = u.replace(/[，。；、）】]+$/, '');
 if (!seen.has(u)) { seen.add(u); urls.push(u);}
 }
 return urls;
+}
+
+function cleanNavMarkdown(md) {
+  // 去掉文档站返回 Markdown 里的导航垃圾行（纯链接列表项 / 整行单链接 / 纯图片行），
+  // 代码块内的行不动；过滤后折叠多余空行。
+  const lines = String(md).split("\n");
+  const out = [];
+  let inFence = false;
+  for (const line of lines) {
+    if (/^\s*```/.test(line)) inFence = !inFence;
+    if (!inFence) {
+      const t = line.trim();
+      if (/^[-*]\s*\[[^\]]*\]\([^)]*\)\s*$/.test(t)) continue;
+      if (/^\[[^\]]*\]\([^)]*\)$/.test(t)) continue;
+      if (/^!\[[^\]]*\]\([^)]*\)$/.test(t)) continue;
+    }
+    out.push(line);
+  }
+  return out.join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
 async function fetchPageViaKitesurf(url) {
@@ -505,6 +524,8 @@ async function fetchPageViaKitesurf(url) {
     const r = data.result;
     if (typeof r === 'string') text = r;
     else if (r && typeof r === 'object') text = r.markdown || r.content || r.html || '';
+    const cleanedText = cleanNavMarkdown(text);
+    if (cleanedText.trim().length >= 800 || cleanedText.length >= text.length * 0.25) text = cleanedText;
     if (text.length > KITESURF_PAGE_CAP) text = text.slice(0, KITESURF_PAGE_CAP) + '\n...（正文过长，已截断至 ' + KITESURF_PAGE_CAP + ' 字）';
     kitesurfCache[url] = { text: text };
     return text;
