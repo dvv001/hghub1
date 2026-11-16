@@ -37,48 +37,7 @@ slate: {
 };
 }
 </script>
-<style>
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body {
-background-color: #060911;
-color: #F1F5F9;
-font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', system-ui, sans-serif;
-overflow-x: hidden;
-margin: 0;
-}
-.hidden { display: none !important; }
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #0B0F19; }
-::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
-.glass-panel {
-background: rgba(15, 23, 42, 0.84);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border: 1px solid rgba(51, 65, 85, 0.6);
-}
-.ios-tabbar {
-background: rgba(9, 13, 22, 0.94);
-backdrop-filter: blur(20px);
--webkit-backdrop-filter: blur(20px);
-border-top: 1px solid rgba(51, 65, 85, 0.65);
-}
-.dynamic-island {
-background: #000000;
-border-radius: 999px;
-border: 1px solid rgba(71, 85, 105, 0.65);
-box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
-transition: all 0.25s ease;
-}
-.dynamic-island.active-api {
-border-color: rgba(6, 182, 212, 0.85);
-box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
-}
-@keyframes pulse-slow {
-0%, 100% { opacity: 1; }
-50% { opacity: 0.4; }
-}
-.animate-pulse-slow { animation: pulse-slow 1.8s infinite ease-in-out; }
-</style>
+<style> * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } body { background-color: #060911; color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', system-ui, sans-serif; overflow-x: hidden; margin: 0; } .hidden { display: none !important; } ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: #0B0F19; } ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; } .glass-panel { background: rgba(15, 23, 42, 0.84); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(51, 65, 85, 0.6); } .ios-tabbar { background: rgba(9, 13, 22, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(51, 65, 85, 0.65); } .dynamic-island { background: #000000; border-radius: 999px; border: 1px solid rgba(71, 85, 105, 0.65); box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65); transition: all 0.25s ease; } .dynamic-island.active-api { border-color: rgba(6, 182, 212, 0.85); box-shadow: 0 0 18px rgba(6, 182, 212, 0.35); } @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } } .animate-pulse-slow { animation: pulse-slow 1.8s infinite ease-in-out; } </style>
 </head>
 <body class="min-h-screen flex flex-col items-center bg-slate-950 selection:bg-cyan-500/30 selection:text-cyan-200">
 <div class="w-full max-w-[480px] min-h-screen flex flex-col bg-[#060911] sm:border-x sm:border-slate-800/80 relative">
@@ -189,20 +148,80 @@ Claw-Code 自动内核与 API 调度日志
 </div>
 </div>
 </section>
-<section id="tabViewTopology" class="hidden space-y-3">
-<div class="glass-panel rounded-2xl p-3 border border-cyan-500/30 shadow-lg shadow-cyan-500/5">
-<div class="flex items-center justify-between mb-2">
+<section id="tabViewTopology" class="fixed inset-0 bottom-[54px] z-40 bg-[#040508] flex flex-col justify-between px-2.5 pt-2.5 pb-2 sm:px-5 sm:pt-3 sm:pb-3 select-none overflow-hidden">
+<div class="w-full max-w-[1100px] mx-auto flex items-center justify-between gap-2 px-1 pb-1.5 shrink-0">
+<div class="grid grid-cols-4 gap-3 sm:gap-8 flex-1">
 <div>
-<h2 class="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
-<span class="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-🕷️ 全息数码蜘蛛神经拓扑 (CYBER SPIDER NET)
-</h2>
-<p class="text-[11px] text-slate-400">8足逆运动学数码蜘蛛实时在智能体节点间攀爬织网，滑动屏幕可吸引蜘蛛跟随，点击节点查看详情</p>
+<div class="text-[9px] sm:text-[10px] font-mono tracking-wider text-slate-400 uppercase">CRAWLERS</div>
+<div id="hudCrawlersCount" class="text-base sm:text-xl font-mono font-bold text-cyan-400 leading-tight">128</div>
 </div>
-<span id="topoStateBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-500/40">STANDBY</span>
+<div>
+<div class="text-[9px] sm:text-[10px] font-mono tracking-wider text-slate-400 uppercase">PAGES</div>
+<div id="hudPagesCount" class="text-base sm:text-xl font-mono font-bold text-slate-100 leading-tight">12</div>
 </div>
-<div id="stageCanvasWrap" class="relative w-full h-[440px] rounded-xl overflow-hidden bg-[#030712] border border-cyan-500/30 shadow-inner">
-<canvas id="stageCanvas" class="w-full h-full block cursor-pointer"></canvas>
+<div>
+<div class="text-[9px] sm:text-[10px] font-mono tracking-wider text-slate-400 uppercase">WORDS READ</div>
+<div id="hudWordsRead" class="text-base sm:text-xl font-mono font-bold text-slate-100 leading-tight">1,680</div>
+</div>
+<div>
+<div class="text-[9px] sm:text-[10px] font-mono tracking-wider text-slate-400 uppercase">SENT TO JEV</div>
+<div id="hudSentToJev" class="text-base sm:text-xl font-mono font-bold text-rose-400 leading-tight">14</div>
+</div>
+</div>
+<div class="flex items-center gap-1.5 shrink-0">
+<span id="topoStateBadge" class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-500/40">1/4 LIVE</span>
+<button id="spawnWebBurstBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 transition">+ 织网</button>
+<button id="toggleFullImmersionBtn" type="button" class="px-2 py-1 rounded-lg text-[11px] font-mono bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 transition">⛶ 沉浸</button>
+<button id="exitTopoToWorkBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 transition">⚡ 工作台</button>
+</div>
+</div>
+<div id="stageCanvasWrap" class="relative w-full max-w-[1100px] mx-auto flex-1 min-h-0 rounded-xl overflow-hidden bg-[#040508]">
+<canvas id="stageCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+</div>
+<div class="w-full max-w-[1100px] mx-auto pt-2 shrink-0">
+<div class="rounded-2xl bg-[#090a10]/95 border border-pink-500/25 px-3 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-3 shadow-lg shadow-pink-500/5">
+<div class="flex items-center gap-3 min-w-0">
+<div class="flex flex-col items-center shrink-0">
+<div id="jevOrbBtn" class="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 via-rose-600 to-purple-800 p-0.5 shadow-md shadow-pink-500/30 cursor-pointer flex items-center justify-center relative">
+<svg class="w-7 h-7 text-slate-950" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2.2">
+<polygon points="18,3 31,10.5 31,25.5 18,33 5,25.5 5,10.5" stroke="rgba(15,23,42,0.85)" fill="rgba(244,114,182,0.35)"/>
+<path d="M12 13 L24 13 L14 23 L24 23" stroke="#090a10" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="18" cy="18" r="2.2" fill="#fff" stroke="none"/>
+</svg>
+</div>
+<span class="text-[9px] font-mono font-bold tracking-widest text-slate-300 mt-0.5">JEV</span>
+</div>
+<div class="min-w-0">
+<div id="jevQuestionTitle" class="text-xs sm:text-sm font-mono font-semibold text-slate-100 truncate">is this repo worth your time?</div>
+<div class="flex items-center gap-5 mt-1">
+<div>
+<div class="text-[8px] sm:text-[9px] font-mono text-slate-400 uppercase">SKIPPED</div>
+<div id="jevSkippedCount" class="text-sm sm:text-base font-mono font-bold text-slate-200 leading-none mt-0.5">0</div>
+</div>
+<div>
+<div class="text-[8px] sm:text-[9px] font-mono text-slate-400 uppercase">KEPT</div>
+<div id="jevKeptCount" class="text-sm sm:text-base font-mono font-bold text-rose-400 leading-none mt-0.5">14</div>
+</div>
+<div id="jevActivePageHint" class="hidden sm:block text-[10px] font-mono text-cyan-300/90 truncate max-w-[320px]">● 实时织网: wiki/Araneae &amp; claw/trident.rs</div>
+</div>
+<div id="jevProgressDots" class="flex items-center gap-1.5 mt-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
+<button id="jevKeepBtn" type="button" class="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/40 transition">KEEP ＋</button>
+<button id="jevSkipBtn" type="button" class="px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700/80 transition">SKIP</button>
+</div>
 </div>
 </div>
 </section>
@@ -302,7 +321,7 @@ Claw-Code 自动内核与 API 调度日志
 </div>
 </section>
 </main>
-<nav class="ios-tabbar sticky bottom-0 z-30 px-2 py-2 flex items-center justify-around">
+<nav id="bottomNavBar" class="ios-tabbar fixed bottom-0 left-0 right-0 z-50 max-w-[1100px] mx-auto px-2 py-1.5 flex items-center justify-around">
 <button type="button" data-nav="workspace" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-cyan-400">
 <span class="text-base leading-none">⚡</span>
 <span class="text-[10px] font-semibold mt-1">协同工作台</span>
@@ -1232,69 +1251,192 @@ syncHeaderAndMetrics();
 }
 const canvas = document.getElementById('stageCanvas');
 const ctx = canvas.getContext('2d');
-let cw = 360;
-let ch = 440;
+let cw = 380;
+let ch = 520;
 let tick = 0;
-const webPoints = Array.from({ length: 58 }, () => ({
-rx: 0.05 + Math.random() * 0.9,
-ry: 0.06 + Math.random() * 0.88,
-vx: (Math.random() - 0.5) * 0.0005,
-vy: (Math.random() - 0.5) * 0.0005,
-r: 1 + Math.random() * 1.4
-}));
-function createCyberSpider(scale, mainColor, accentColor, speedMul) {
-const legAngles = [
--1.15, -0.72, -0.30, 0.18, // Left 4 legs
-1.15,  0.72,  0.30, -0.18 // Right 4 legs
+const crawlerTelemetry = { crawlers: 128, pages: 12, wordsRead: 1680, sentToJev: 14, skipped: 0, kept: 14, fullImmersion: false };
+const NODE_PALETTE = ['#38BDF8', '#F43F5E', '#EC4899', '#A855F7', '#4ADE80', '#818CF8', '#FACC15', '#FFFFFF'];
+const PAGE_SPECS = [
+{ id: 'page-0', title: 'wiki/Araneae', tag: 'Araneae', agentIdx: 0, hl: 'cluster' },
+{ id: 'page-1', title: 'claw/trident.rs', tag: 'trident', agentIdx: 1, hl: 'cluster' },
+{ id: 'page-2', title: 'claw/prompt_cache.rs', tag: 'fnv1a', agentIdx: 2, hl: 'cluster' },
+{ id: 'page-3', title: 'wiki/Spider_web', tag: 'orb_web', agentIdx: 3, hl: 'cluster' },
+{ id: 'page-4', title: 'nexus/architect.md', tag: 'N-01', agentIdx: 0, hl: 'cluster' },
+{ id: 'page-5', title: 'github/trending', tag: 'finding:', agentIdx: 1, hl: 'words' },
+{ id: 'page-6', title: 'claw/query_engine.py', tag: 'budget', agentIdx: 2, hl: 'cluster' },
+{ id: 'page-7', title: 'nexus/secops.rs', tag: 'started', agentIdx: 3, hl: 'pink_bar' },
+{ id: 'page-8', title: 'claw/openai_compat.rs', tag: 'reason', agentIdx: 4, hl: 'pink_top' },
+{ id: 'page-9', title: 'wiki/Web_crawler', tag: 'crawler', agentIdx: 0, hl: 'cluster' },
+{ id: 'page-10', title: 'nexus/claw_report.json', tag: 'kept', agentIdx: 4, hl: 'pink_tilt' },
+{ id: 'page-11', title: 'claw/parallel_fork.py', tag: 'fork', agentIdx: 2, hl: 'cluster' }
 ];
+const miniPages = PAGE_SPECS.map((spec, idx) => {
+const lines = [];
+for (let l = 0; l < 15; l++) {
+const isH = l === 0 || l === 6 || l === 11;
+const indent = (!isH && (l % 3 === 1)) ? 0.08 : 0;
+const segs = [];
+let curX = 0.06 + indent;
+const maxW = isH ? (0.45 + (l * 13 + idx * 7) % 30 * 0.01) : (0.78 + ((l * 19 + idx * 11) % 18) * 0.01);
+while (curX < maxW) {
+const w = 0.08 + ((curX * 100 + l * 7 + idx * 3) % 16) * 0.011;
+const highlight = (!isH && ((idx + l) % 7 === 0) && curX > 0.25 && curX < 0.55) ? ((idx + l) % 2 === 0 ? '#EC4899' : '#38BDF8') : null;
+segs.push({ rx: curX, rw: Math.min(w, maxW - curX), highlight });
+curX += w + 0.03;
+}
+lines.push({ ry: 0.14 + l * 0.055, isH, segs });
+}
+const nodes = [];
+const edges = [];
+const initCnt = 16 + (idx * 3) % 9;
+const cRx = 0.35 + ((idx * 17) % 30) * 0.01;
+const cRy = 0.42 + ((idx * 13) % 26) * 0.01;
+for (let n = 0; n < initCnt; n++) {
+const ang = n * 2.39996 + idx * 0.7;
+const rad = 0.06 + Math.sqrt(n / initCnt) * 0.34;
+const rx = Math.max(0.07, Math.min(0.93, cRx + Math.cos(ang) * rad * 1.05 + Math.sin(n * 3.1) * 0.05));
+const ry = Math.max(0.14, Math.min(0.92, cRy + Math.sin(ang) * rad * 0.95 + Math.cos(n * 2.7) * 0.05));
+nodes.push({
+rx, ry,
+vx: (Math.random() - 0.5) * 0.0006,
+vy: (Math.random() - 0.5) * 0.0006,
+r: (n % 5 === 0) ? 2.5 : 1.6 + (n % 3) * 0.4,
+color: NODE_PALETTE[(n + idx * 2) % NODE_PALETTE.length],
+bornTick: -n * 10,
+hasLabel: n === 2 || (n === 8 && idx % 2 === 0),
+label: n === 2 ? spec.tag : 'n_' + n
+});
+}
+for (let i = 0; i < nodes.length; i++) {
+const dists = [];
+for (let j = 0; j < nodes.length; j++) {
+if (i !== j) {
+const d = Math.hypot(nodes[i].rx - nodes[j].rx, nodes[i].ry - nodes[j].ry);
+if (d < 0.42) dists.push({ j, d });
+}
+}
+dists.sort((a, b) => a.d - b.d);
+for (let k = 0; k < Math.min(3 + (i % 2), dists.length); k++) {
+const tj = dists[k].j;
+if (i < tj || k === 0) edges.push({ a: i, b: tj, prog: 1, color: nodes[i].color });
+}
+}
 return {
-x: 180,
-y: 220,
-vx: 0,
-vy: 0,
-angle: -Math.PI / 2,
-targetX: 180,
-targetY: 120,
-patrolNodeIdx: 1,
-waitTimer: 0,
-scale,
-mainColor,
-accentColor,
-speedMul,
-trail: [],
+...spec, idx, lines, nodes, edges,
+crawler: { rx: cRx, ry: cRy, targetRx: nodes[0].rx, targetRy: nodes[0].ry, angle: 0, legPhase: idx * 0.9, color: NODE_PALETTE[idx % NODE_PALETTE.length], waitTicks: 0 },
+rect: { x: 0, y: 0, w: 80, h: 100 }
+};
+});
+const crossBridges = [];
+function rebuildCrossBridges() {
+crossBridges.length = 0;
+const pairs = [[0,1],[1,2],[2,3],[4,5],[5,6],[6,7],[8,9],[9,10],[10,11],[0,4],[1,5],[2,6],[3,7],[4,8],[5,9],[6,10],[7,11],[1,6],[5,10],[2,5],[6,9]];
+pairs.forEach(([pA, pB], idx) => {
+const pageA = miniPages[pA];
+const pageB = miniPages[pB];
+if (!pageA || !pageB || !pageA.nodes.length || !pageB.nodes.length) return;
+for (let b = 0; b < 2; b++) {
+crossBridges.push({
+pA, pB,
+nA: pageA.nodes[(idx * 3 + b * 5) % pageA.nodes.length],
+nB: pageB.nodes[(idx * 5 + b * 3) % pageB.nodes.length],
+color: b === 0 ? '#38BDF8' : '#EC4899'
+});
+}
+});
+}
+rebuildCrossBridges();
+const jevStreams = [];
+function updateTopoHudDOM() {
+const wEl = document.getElementById('hudWordsRead');
+const sEl = document.getElementById('hudSentToJev');
+const cEl = document.getElementById('hudCrawlersCount');
+const kEl = document.getElementById('jevKeptCount');
+const skEl = document.getElementById('jevSkippedCount');
+if (wEl) wEl.textContent = crawlerTelemetry.wordsRead.toLocaleString();
+if (sEl) sEl.textContent = String(crawlerTelemetry.sentToJev);
+if (cEl) cEl.textContent = String(crawlerTelemetry.crawlers + (isExecuting ? 64 : 0));
+if (kEl) kEl.textContent = String(crawlerTelemetry.kept);
+if (skEl) skEl.textContent = String(crawlerTelemetry.skipped);
+}
+function sproutNodeOnPage(page, customRx, customRy, playSound = false) {
+const rx = customRx !== undefined ? customRx : Math.max(0.08, Math.min(0.92, page.crawler.rx + (Math.random() - 0.5) * 0.28));
+const ry = customRy !== undefined ? customRy : Math.max(0.14, Math.min(0.92, page.crawler.ry + (Math.random() - 0.5) * 0.28));
+const color = NODE_PALETTE[Math.floor(Math.random() * NODE_PALETTE.length)];
+if (page.nodes.length >= 28) {
+page.nodes.shift();
+for (let i = page.edges.length - 1; i >= 0; i--) {
+page.edges[i].a--;
+page.edges[i].b--;
+if (page.edges[i].a < 0 || page.edges[i].b < 0) page.edges.splice(i, 1);
+}
+}
+const newIdx = page.nodes.length;
+page.nodes.push({
+rx, ry,
+vx: (Math.random() - 0.5) * 0.0006,
+vy: (Math.random() - 0.5) * 0.0006,
+r: 1.7 + Math.random() * 1.4,
+color,
+bornTick: tick,
+hasLabel: Math.random() < 0.16,
+label: ['finding', 'started', 'claw', 'kept', 'sync', 'trident'][Math.floor(Math.random() * 6)]
+});
+const dists = [];
+for (let i = 0; i < newIdx; i++) {
+dists.push({ i, d: Math.hypot(page.nodes[i].rx - rx, page.nodes[i].ry - ry) });
+}
+dists.sort((a, b) => a.d - b.d);
+for (let k = 0; k < Math.min(4, dists.length); k++) {
+page.edges.push({ a: dists[k].i, b: newIdx, prog: 0.05, color: k === 0 ? '#FFFFFF' : color });
+}
+crawlerTelemetry.wordsRead += 3 + Math.floor(Math.random() * 9);
+if (playSound) workflowSFX.spiderStep(true);
+updateTopoHudDOM();
+}
+function createCyberSpider(scale, mainColor, accentColor, speedMul) {
+const legAngles = [-1.15, -0.72, -0.30, 0.18, 1.15, 0.72, 0.30, -0.18];
+return {
+x: 180, y: 220, vx: 0, vy: 0, angle: -Math.PI / 2, targetX: 180, targetY: 120,
+patrolPageIdx: 0, waitTimer: 0, scale, mainColor, accentColor, speedMul, trail: [],
 legs: legAngles.map((ang, i) => ({
-side: i < 4 ? -1 : 1,
-idx: i % 4,
-baseAngle: ang,
-footX: 180,
-footY: 220,
-startX: 180,
-startY: 220,
-goalX: 180,
-goalY: 220,
-stepProg: 1,
-group: i % 2
+side: i < 4 ? -1 : 1, idx: i % 4, baseAngle: ang,
+footX: 180, footY: 220, startX: 180, startY: 220, goalX: 180, goalY: 220, stepProg: 1, group: i % 2
 }))
 };
 }
-const mainSpider = createCyberSpider(1.0, '#22D3EE', '#A855F7', 1.0);
-const scoutSpider = createCyberSpider(0.62, '#34D399', '#06B6D4', 1.28);
+const mainSpider = createCyberSpider(0.85, '#38BDF8', '#EC4899', 1.05);
+const scoutSpider = createCyberSpider(0.62, '#A855F7', '#4ADE80', 1.32);
 let pointerTarget = { active: false, x: 180, y: 220, expireTick: 0 };
 function initSpidersPosition() {
-mainSpider.x = cw * 0.5;
-mainSpider.y = ch * 0.5;
-scoutSpider.x = cw * 0.28;
-scoutSpider.y = ch * 0.32;
+mainSpider.x = cw * 0.35;
+mainSpider.y = ch * 0.42;
+scoutSpider.x = cw * 0.68;
+scoutSpider.y = ch * 0.58;
 [mainSpider, scoutSpider].forEach(sp => {
-sp.legs.forEach((leg, i) => {
-const sideSign = leg.side;
-const spread = (leg.idx - 1.5) * 0.36;
-const a = sp.angle + sideSign * (Math.PI * 0.48) + spread;
-const reach = (34 + (leg.idx === 0 || leg.idx === 3 ? 8 : 2)) * sp.scale;
+sp.legs.forEach((leg) => {
+const a = sp.angle + leg.side * (Math.PI * 0.48) + (leg.idx - 1.5) * 0.36;
+const reach = (30 + (leg.idx === 0 || leg.idx === 3 ? 7 : 2)) * sp.scale;
 leg.footX = leg.goalX = leg.startX = sp.x + Math.cos(a) * reach;
 leg.footY = leg.goalY = leg.startY = sp.y + Math.sin(a) * reach;
 leg.stepProg = 1;
 });
+});
+}
+function layoutMiniPages() {
+const padX = Math.max(4, cw * 0.012);
+const padY = Math.max(4, ch * 0.012);
+const gapX = Math.max(5, cw * 0.014);
+const gapY = Math.max(6, ch * 0.016);
+const cardW = (cw - padX * 2 - gapX * 3) / 4;
+const cardH = (ch - padY * 2 - gapY * 2) / 3;
+miniPages.forEach((p, idx) => {
+p.rect = {
+x: padX + (idx % 4) * (cardW + gapX),
+y: padY + Math.floor(idx / 4) * (cardH + gapY),
+w: Math.max(40, cardW),
+h: Math.max(50, cardH)
+};
 });
 }
 function resizeStageCanvas() {
@@ -1306,423 +1448,287 @@ const dpr = window.devicePixelRatio || 1;
 cw = rect.width;
 ch = rect.height;
 canvas.width = cw * dpr;
-canvas.height = ch * dpr;
-ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+canvas.height = ch * dpr;ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+layoutMiniPages();
 if (!resizeStageCanvas._inited) {
 resizeStageCanvas._inited = true;
 initSpidersPosition();
 }
 }
-function computeNodeCoords() {
-const enabled = agents.filter(a => a.enabled);
-const map = {};
-if (enabled.length === 0) return map;
-const cx = cw * 0.5;
-const cy = ch * 0.5;
-map[enabled[0].id] = { x: cx, y: cy, agent: enabled[0], hub: true };
-const outer = enabled.length - 1;
-const r = Math.min(cw, ch) * 0.35;
-for (let i = 1; i < enabled.length; i++) {
-const angle = ((i - 1) / Math.max(1, outer)) * Math.PI * 2 - Math.PI / 2;
-map[enabled[i].id] = {
-x: cx + Math.cos(angle) * r,
-y: cy + Math.sin(angle) * r,
-agent: enabled[i],
-hub: false
-};
+function drawMiniCrawlerSpider(cx, cy, angle, legPhase, color, scale = 1) {
+ctx.save();ctx.translate(cx, cy);ctx.rotate(angle);ctx.strokeStyle = color;ctx.lineWidth = 1.1 * scale;
+for (let side = -1; side <= 1; side += 2) {
+for (let l = 0; l < 4; l++) {
+const a1 = side * (0.45 + l * 0.34) + Math.sin(legPhase + l * 1.4 + (side > 0 ? Math.PI : 0)) * 0.22;
+const kx = Math.cos(a1) * 5.5 * scale;
+const ky = Math.sin(a1) * 5.5 * scale;
+const fx = Math.cos(a1 + side * 0.25) * 10.5 * scale;
+const fy = Math.sin(a1 + side * 0.25) * 10.5 * scale;ctx.beginPath();ctx.moveTo(0, 0);ctx.lineTo(kx, ky);ctx.lineTo(fx, fy);ctx.stroke();ctx.fillStyle = '#FFFFFF';ctx.beginPath();ctx.arc(fx, fy, 0.9 * scale, 0, Math.PI * 2);ctx.fill();
 }
-return map;
 }
-function updateAndDrawCyberSpider(sp, nodesMap, isPrimary) {
-const ids = Object.keys(nodesMap);
-if (ids.length === 0) return;
-const runningId = ids.find(id => nodesMap[id].agent.status === 'running');
+ctx.fillStyle = color;ctx.shadowColor = color;ctx.shadowBlur = 6;ctx.beginPath();ctx.arc(0, 0, 2.3 * scale, 0, Math.PI * 2);ctx.fill();ctx.restore();
+}
+function updateAndDrawCyberSpider(sp, isPrimary) {
 if (isPrimary && pointerTarget.active && tick < pointerTarget.expireTick) {
 sp.targetX = pointerTarget.x;
 sp.targetY = pointerTarget.y;
-} else if (runningId) {
-const rNode = nodesMap[runningId];
-const orbitAngle = tick * 0.05 * sp.speedMul + (isPrimary ? 0 : Math.PI);
-sp.targetX = rNode.x + Math.cos(orbitAngle) * (24 * sp.scale);
-sp.targetY = rNode.y + Math.sin(orbitAngle) * (24 * sp.scale);
 } else {
-const targetNode = nodesMap[ids[sp.patrolNodeIdx % ids.length]];
-if (targetNode) {
-const distToNode = Math.hypot(targetNode.x - sp.x, targetNode.y - sp.y);
-if (distToNode < 18) {
+const tp = miniPages[sp.patrolPageIdx % miniPages.length];
+if (tp) {
+const tx = tp.rect.x + tp.crawler.rx * tp.rect.w;
+const ty = tp.rect.y + tp.crawler.ry * tp.rect.h;
+if (Math.hypot(tx - sp.x, ty - sp.y) < 20) {
 sp.waitTimer++;
-if (sp.waitTimer > (isPrimary ? 24 : 16)) {
+if (sp.waitTimer > (isPrimary ? 18 : 12)) {
 sp.waitTimer = 0;
-sp.patrolNodeIdx = (sp.patrolNodeIdx + 1 + Math.floor(Math.random() * (ids.length - 1))) % ids.length;
-const nextNode = nodesMap[ids[sp.patrolNodeIdx]];
-if (nextNode) {
-spawnRealPacket(targetNode.agent.id, nextNode.agent.id, sp.mainColor);
+sproutNodeOnPage(tp, undefined, undefined, false);
+sp.patrolPageIdx = (sp.patrolPageIdx + 1 + Math.floor(Math.random() * 4)) % miniPages.length;
 }
 }
-}
-sp.targetX = targetNode.x;
-sp.targetY = targetNode.y;
+sp.targetX = tx;
+sp.targetY = ty;
 }
 }
 const dx = sp.targetX - sp.x;
 const dy = sp.targetY - sp.y;
 const dist = Math.hypot(dx, dy);
-const maxSpeed = (isExecuting ? 2.6 : 1.65) * sp.speedMul;
-if (dist > 4) {
-const desiredAngle = Math.atan2(dy, dx);
-let diff = desiredAngle - sp.angle;
+const maxSpeed = (isExecuting ? 3.2 : 2.1) * sp.speedMul;
+if (dist > 3) {
+let diff = Math.atan2(dy, dx) - sp.angle;
 while (diff > Math.PI) diff -= Math.PI * 2;
 while (diff < -Math.PI) diff += Math.PI * 2;
-sp.angle += diff * 0.14;
-const moveStep = Math.min(maxSpeed, dist * 0.09 + 0.45);
-const sway = Math.sin(tick * 0.22 * sp.speedMul) * 0.28;
-sp.x += Math.cos(sp.angle + sway * 0.15) * moveStep;
-sp.y += Math.sin(sp.angle + sway * 0.15) * moveStep;
-} else {
-sp.angle += Math.sin(tick * 0.04) * 0.008;
+sp.angle += diff * 0.16;
+const moveStep = Math.min(maxSpeed, dist * 0.11 + 0.5);
+sp.x += Math.cos(sp.angle) * moveStep;
+sp.y += Math.sin(sp.angle) * moveStep;
 }
 if (tick % 2 === 0) {
 sp.trail.push({ x: sp.x, y: sp.y });
-if (sp.trail.length > 28) sp.trail.shift();
+if (sp.trail.length > 22) sp.trail.shift();
 }
 if (sp.trail.length > 2) {
 ctx.save();
 for (let i = 1; i < sp.trail.length; i++) {
-const p0 = sp.trail[i - 1];
-const p1 = sp.trail[i];
-const alpha = (i / sp.trail.length) * 0.35;
-ctx.strokeStyle = sp.mainColor;
-ctx.globalAlpha = alpha;
-ctx.lineWidth = 1.2 * sp.scale;
-ctx.beginPath();
-ctx.moveTo(p0.x, p0.y);
-ctx.lineTo(p1.x, p1.y);
-ctx.stroke();
+ctx.strokeStyle = sp.mainColor;ctx.globalAlpha = (i / sp.trail.length) * 0.42;ctx.lineWidth = 1.1 * sp.scale;ctx.beginPath();ctx.moveTo(sp.trail[i - 1].x, sp.trail[i - 1].y);ctx.lineTo(sp.trail[i].x, sp.trail[i].y);ctx.stroke();
 }
 ctx.restore();
 }
-ctx.save();
-for (let i = 0; i < webPoints.length; i++) {
-const wp = webPoints[i];
-const wx = wp.rx * cw;
-const wy = wp.ry * ch;
-const d = Math.hypot(wx - sp.x, wy - sp.y);
-const maxReach = 92 * sp.scale;
-if (d < maxReach) {
-const alpha = (1 - d / maxReach) * 0.42;
-ctx.strokeStyle = sp.mainColor;
-ctx.globalAlpha = alpha;
-ctx.lineWidth = 0.8;
-ctx.beginPath();
-ctx.moveTo(sp.x, sp.y);
-ctx.lineTo(wx, wy);
-ctx.stroke();
-}
-}
-ctx.restore();
-const group0Stepping = sp.legs.some(l => l.group === 0 && l.stepProg < 1);
-const group1Stepping = sp.legs.some(l => l.group === 1 && l.stepProg < 1);
+const g0 = sp.legs.some(l => l.group === 0 && l.stepProg < 1);
+const g1 = sp.legs.some(l => l.group === 1 && l.stepProg < 1);
 sp.legs.forEach((leg) => {
-const sideSign = leg.side;
-const shoulderOffset = (leg.idx - 1.5) * 4.2 * sp.scale;
-const shoulderX = sp.x + Math.cos(sp.angle) * (-shoulderOffset * 0.4) + Math.cos(sp.angle + sideSign * Math.PI * 0.5) * (6.5 * sp.scale);
-const shoulderY = sp.y + Math.sin(sp.angle) * (-shoulderOffset * 0.4) + Math.sin(sp.angle + sideSign * Math.PI * 0.5) * (6.5 * sp.scale);
-const spreadAngle = (leg.idx - 1.5) * 0.42;
-const idealAngle = sp.angle + sideSign * (Math.PI * 0.46 + spreadAngle * sideSign);
-const reachDist = (33 + (leg.idx === 0 || leg.idx === 3 ? 9 : 0)) * sp.scale;
-const lookAhead = dist > 4 ? 11 * sp.scale : 0;
-const idealX = sp.x + Math.cos(idealAngle) * reachDist + Math.cos(sp.angle) * lookAhead;
-const idealY = sp.y + Math.sin(idealAngle) * reachDist + Math.sin(sp.angle) * lookAhead;
-const footErr = Math.hypot(idealX - leg.footX, idealY - leg.footY);
-const maxStretch = 23 * sp.scale;
-const otherGroupBusy = leg.group === 0 ? group1Stepping : group0Stepping;
-if (leg.stepProg >= 1 && (footErr > maxStretch || (footErr > maxStretch * 0.68 && !otherGroupBusy))) {
+const sSign = leg.side;
+const shOff = (leg.idx - 1.5) * 4.0 * sp.scale;
+const shX = sp.x + Math.cos(sp.angle) * (-shOff * 0.4) + Math.cos(sp.angle + sSign * Math.PI * 0.5) * (5.5 * sp.scale);
+const shY = sp.y + Math.sin(sp.angle) * (-shOff * 0.4) + Math.sin(sp.angle + sSign * Math.PI * 0.5) * (5.5 * sp.scale);
+const idAng = sp.angle + sSign * (Math.PI * 0.46 + (leg.idx - 1.5) * 0.42 * sSign);
+const rDist = (26 + (leg.idx === 0 || leg.idx === 3 ? 7 : 0)) * sp.scale;
+const look = dist > 4 ? 9 * sp.scale : 0;
+const idX = sp.x + Math.cos(idAng) * rDist + Math.cos(sp.angle) * look;
+const idY = sp.y + Math.sin(idAng) * rDist + Math.sin(sp.angle) * look;
+const err = Math.hypot(idX - leg.footX, idY - leg.footY);
+const maxSt = 19 * sp.scale;
+const busy = leg.group === 0 ? g1 : g0;
+if (leg.stepProg >= 1 && (err > maxSt || (err > maxSt * 0.65 && !busy))) {
 leg.stepProg = 0;
 workflowSFX.spiderStep(isPrimary);
 leg.startX = leg.footX;
 leg.startY = leg.footY;
-let snapX = idealX;
-let snapY = idealY;
-for (let w = 0; w < webPoints.length; w++) {
-const wx = webPoints[w].rx * cw;
-const wy = webPoints[w].ry * ch;
-if (Math.hypot(wx - idealX, wy - idealY) < 14 * sp.scale) {
-snapX = wx;
-snapY = wy;
-break;
-}
-}
-leg.goalX = snapX;
-leg.goalY = snapY;
+leg.goalX = idX;
+leg.goalY = idY;
 }
 let lift = 0;
 if (leg.stepProg < 1) {
-leg.stepProg = Math.min(1, leg.stepProg + 0.24 * sp.speedMul);
+leg.stepProg = Math.min(1, leg.stepProg + 0.26 * sp.speedMul);
 const t = leg.stepProg;
-const smooth = t * t * (3 - 2 * t);
-leg.footX = leg.startX + (leg.goalX - leg.startX) * smooth;
-leg.footY = leg.startY + (leg.goalY - leg.startY) * smooth;
-lift = Math.sin(t * Math.PI) * 9 * sp.scale;
+const sm = t * t * (3 - 2 * t);
+leg.footX = leg.startX + (leg.goalX - leg.startX) * sm;
+leg.footY = leg.startY + (leg.goalY - leg.startY) * sm;
+lift = Math.sin(t * Math.PI) * 7.5 * sp.scale;
 }
-const midX = (shoulderX + leg.footX) * 0.5;
-const midY = (shoulderY + leg.footY) * 0.5;
-const legDx = leg.footX - shoulderX;
-const legDy = leg.footY - shoulderY;
-const legLen = Math.max(1, Math.hypot(legDx, legDy));
-const perpX = (-legDy / legLen) * sideSign;
-const perpY = (legDx / legLen) * sideSign;
-const archAmt = (12 * sp.scale) + lift * 0.6;
-const kneeX = midX + perpX * archAmt * 0.65;
-const kneeY = midY + perpY * archAmt * 0.65 - lift;
-ctx.save();
-ctx.strokeStyle = sp.mainColor;
-ctx.shadowColor = sp.mainColor;
-ctx.shadowBlur = 8;
-ctx.lineWidth = 2.0 * sp.scale;
-ctx.lineCap = 'round';
-ctx.lineJoin = 'round';
-ctx.beginPath();
-ctx.moveTo(shoulderX, shoulderY);
-ctx.lineTo(kneeX, kneeY);
-ctx.lineTo(leg.footX, leg.footY);
-ctx.stroke();
-ctx.fillStyle = '#FFFFFF';
-ctx.beginPath();
-ctx.arc(kneeX, kneeY, 1.7 * sp.scale, 0, Math.PI * 2);
-ctx.fill();
-ctx.fillStyle = leg.stepProg < 1 ? '#FDE047' : sp.accentColor;
-ctx.beginPath();
-ctx.arc(leg.footX, leg.footY, (leg.stepProg < 1 ? 2.4 : 1.8) * sp.scale, 0, Math.PI * 2);
-ctx.fill();
-ctx.restore();
-});
-ctx.save();
-ctx.translate(sp.x, sp.y);
-ctx.rotate(sp.angle);
-const abdX = -11 * sp.scale;
-const abdGrad = ctx.createRadialGradient(abdX, 0, 1, abdX, 0, 11 * sp.scale);
-abdGrad.addColorStop(0, sp.accentColor);
-abdGrad.addColorStop(0.6, '#0F172A');
-abdGrad.addColorStop(1, '#020617');
-ctx.fillStyle = abdGrad;
-ctx.strokeStyle = sp.mainColor;
-ctx.shadowColor = sp.mainColor;
-ctx.shadowBlur = 12;
-ctx.lineWidth = 1.5 * sp.scale;
-ctx.beginPath();
-ctx.ellipse(abdX, 0, 10.5 * sp.scale, 7.8 * sp.scale, 0, 0, Math.PI * 2);
-ctx.fill();
-ctx.stroke();
-ctx.strokeStyle = 'rgba(255,255,255,0.65)';
-ctx.lineWidth = 1 * sp.scale;
-for (let s = -1; s <= 1; s++) {
-ctx.beginPath();
-ctx.moveTo(abdX + s * 3.2 * sp.scale, -4.5 * sp.scale);
-ctx.lineTo(abdX + s * 3.2 * sp.scale, 4.5 * sp.scale);
-ctx.stroke();
-}
-ctx.fillStyle = '#0F172A';
-ctx.strokeStyle = '#FFFFFF';
-ctx.lineWidth = 1.4 * sp.scale;
-ctx.beginPath();
-ctx.ellipse(3 * sp.scale, 0, 6.2 * sp.scale, 5.2 * sp.scale, 0, 0, Math.PI * 2);
-ctx.fill();
-ctx.stroke();
-ctx.fillStyle = '#F43F5E';
-ctx.shadowColor = '#F43F5E';
-ctx.shadowBlur = 6;
-[-2.2, -0.8, 0.8, 2.2].forEach(ey => {
-ctx.beginPath();
-ctx.arc(7.8 * sp.scale, ey * sp.scale, 1.0 * sp.scale, 0, Math.PI * 2);
-ctx.fill();
-});
-ctx.restore();
+const lDx = leg.footX - shX;
+const lDy = leg.footY - shY;
+const lLen = Math.max(1, Math.hypot(lDx, lDy));
+const arch = (10 * sp.scale) + lift * 0.55;
+const knX = (shX + leg.footX) * 0.5 + ((-lDy / lLen) * sSign) * arch * 0.65;
+const knY = (shY + leg.footY) * 0.5 + ((lDx / lLen) * sSign) * arch * 0.65 - lift;ctx.save();ctx.strokeStyle = 'rgba(248, 250, 252, 0.88)';ctx.shadowColor = sp.mainColor;ctx.shadowBlur = 6;ctx.lineWidth = 1.45 * sp.scale;ctx.beginPath();ctx.moveTo(shX, shY);ctx.lineTo(knX, knY);ctx.lineTo(leg.footX, leg.footY);ctx.stroke();ctx.fillStyle = sp.mainColor;ctx.beginPath();ctx.arc(knX, knY, 1.5 * sp.scale, 0, Math.PI * 2);ctx.fill();ctx.fillStyle = leg.stepProg < 1 ? '#FACC15' : sp.accentColor;ctx.beginPath();ctx.arc(leg.footX, leg.footY, 1.8 * sp.scale, 0, Math.PI * 2);ctx.fill();ctx.restore();
+});ctx.save();ctx.translate(sp.x, sp.y);ctx.rotate(sp.angle);ctx.fillStyle = '#0F172A';ctx.strokeStyle = sp.mainColor;ctx.shadowColor = sp.mainColor;ctx.shadowBlur = 10;ctx.lineWidth = 1.4 * sp.scale;ctx.beginPath();ctx.ellipse(-6 * sp.scale, 0, 6.5 * sp.scale, 4.6 * sp.scale, 0, 0, Math.PI * 2);ctx.fill();ctx.stroke();ctx.fillStyle = sp.accentColor;ctx.beginPath();ctx.arc(2.5 * sp.scale, 0, 3.2 * sp.scale, 0, Math.PI * 2);ctx.fill();ctx.restore();
 }
 function renderTopologyLoop() {
-tick++;
-const cx = cw * 0.5;
-const cy = ch * 0.5;
-const bgGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, Math.max(cw, ch) * 0.72);
-bgGrad.addColorStop(0, '#091526');
-bgGrad.addColorStop(0.6, '#040914');
-bgGrad.addColorStop(1, '#020409');
-ctx.fillStyle = bgGrad;
-ctx.fillRect(0, 0, cw, ch);
-for (let i = 0; i < webPoints.length; i++) {
-const p = webPoints[i];
-p.rx += p.vx;
-p.ry += p.vy;
-if (p.rx < 0.04 || p.rx > 0.96) p.vx *= -1;
-if (p.ry < 0.05 || p.ry > 0.95) p.vy *= -1;
-}
-ctx.save();
-for (let i = 0; i < webPoints.length; i++) {
-const p1 = webPoints[i];
-const x1 = p1.rx * cw;
-const y1 = p1.ry * ch;
-ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
-ctx.beginPath();
-ctx.arc(x1, y1, p1.r, 0, Math.PI * 2);
-ctx.fill();
-for (let j = i + 1; j < webPoints.length; j++) {
-const p2 = webPoints[j];
-const x2 = p2.rx * cw;
-const y2 = p2.ry * ch;
-const d = Math.hypot(x2 - x1, y2 - y1);
-if (d < 68) {
-ctx.strokeStyle = `rgba(30, 64, 175, ${(1 - d / 68) * 0.28})`;
-ctx.lineWidth = 0.7;
-ctx.beginPath();
-ctx.moveTo(x1, y1);
-ctx.lineTo(x2, y2);
-ctx.stroke();
-}
-}
-}
-ctx.restore();
-const nodes = computeNodeCoords();
-const ids = Object.keys(nodes);
-const orbitR = Math.min(cw, ch) * 0.35;
-ctx.save();
-[0.35, 0.68, 1.0].forEach((ratio) => {
-const rr = orbitR * ratio;
-ctx.strokeStyle = 'rgba(6, 182, 212, 0.14)';
-ctx.lineWidth = 1;
-ctx.beginPath();
-const spokes = 8;
-for (let s = 0; s <= spokes; s++) {
-const a = (s / spokes) * Math.PI * 2;
-const wx = cx + Math.cos(a) * rr;
-const wy = cy + Math.sin(a) * rr;
-if (s === 0) ctx.moveTo(wx, wy);
-else ctx.lineTo(wx, wy);
-}
-ctx.stroke();
+tick++;ctx.fillStyle = '#040508';ctx.fillRect(0, 0, cw, ch);
+miniPages.forEach((page) => {
+const { x, y, w, h } = page.rect;
+const ag = agents[page.agentIdx % agents.length];
+const isRun = ag && ag.status === 'running';ctx.save();ctx.fillStyle = '#080B12';ctx.strokeStyle = isRun ? 'rgba(56, 189, 248, 0.65)' : 'rgba(51, 65, 85, 0.48)';ctx.lineWidth = isRun ? 1.4 : 0.9;ctx.beginPath();
+if (ctx.roundRect) ctx.roundRect(x, y, w, h, 5);
+else ctx.rect(x, y, w, h);ctx.fill();ctx.stroke();ctx.fillStyle = '#0D131F';ctx.fillRect(x + 1, y + 1, w - 2, Math.max(9, h * 0.085));
+const dotY = y + Math.max(4.5, h * 0.042);
+['#475569', '#38BDF8', '#EC4899'].forEach((dc, di) => {
+ctx.fillStyle = dc;ctx.beginPath();ctx.arc(x + 5 + di * 4.5, dotY, 1.3, 0, Math.PI * 2);ctx.fill();
 });
+page.lines.forEach((ln) => {
+const ly = y + ln.ry * h;
+if (ly > y + h - 4) return;
+ln.segs.forEach((seg) => {
+const sx = x + seg.rx * w;
+const sw = Math.max(2, seg.rw * w);
+if (seg.highlight) {
+ctx.fillStyle = seg.highlight;ctx.globalAlpha = 0.72;ctx.fillRect(sx - 1, ly - 1.5, sw + 2, 3.6);ctx.globalAlpha = 1;
+} else {
+ctx.fillStyle = ln.isH ? 'rgba(203, 213, 225, 0.36)' : 'rgba(100, 116, 139, 0.24)';ctx.fillRect(sx, ly, sw, ln.isH ? 2.2 : 1.5);
+}
+});
+});
+if (page.hl === 'words') {
+ctx.fillStyle = 'rgba(226, 232, 240, 0.78)';ctx.font = '600 8.5px monospace';ctx.textAlign = 'left';ctx.fillText('Trending', x + w * 0.07, y + h * 0.16);ctx.fillText('finding:', x + w * 0.08, y + h * 0.51);
+} else if (page.hl === 'pink_bar') {
+ctx.fillStyle = '#EC4899';ctx.fillRect(x + w * 0.56, y + h * 0.78, w * 0.36, 4.5);ctx.fillStyle = 'rgba(226, 232, 240, 0.75)';ctx.font = '600 8px monospace';ctx.fillText('started', x + w * 0.16, y + h * 0.73);
+} else if (page.hl === 'pink_top') {
+ctx.fillStyle = '#EC4899';ctx.fillRect(x + w * 0.28, y + h * 0.12, w * 0.26, 6.5);
+} else if (page.hl === 'pink_tilt') {
+ctx.save();ctx.translate(x + w * 0.42, y + h * 0.16);ctx.rotate(-0.07);ctx.fillStyle = '#EC4899';ctx.shadowColor = '#EC4899';ctx.shadowBlur = 8;ctx.fillRect(-w * 0.48, -3, w * 0.92, 5.5);ctx.restore();
+}
 ctx.restore();
-if (ids.length > 0) {
-const hub = nodes[ids[0]];
-if (ids.length > 2) {
-ctx.save();
-ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
-ctx.lineWidth = 1.1;
-ctx.beginPath();
-for (let i = 1; i < ids.length; i++) {
-const pA = nodes[ids[i]];
-const pB = nodes[ids[i === ids.length - 1 ? 1 : i + 1]];
-ctx.moveTo(pA.x, pA.y);
-ctx.lineTo(pB.x, pB.y);
+});ctx.save();
+crossBridges.forEach((br, bIdx) => {
+const pageA = miniPages[br.pA];
+const pageB = miniPages[br.pB];
+if (!pageA || !pageB) return;
+const x1 = pageA.rect.x + br.nA.rx * pageA.rect.w;
+const y1 = pageA.rect.y + br.nA.ry * pageA.rect.h;
+const x2 = pageB.rect.x + br.nB.rx * pageB.rect.w;
+const y2 = pageB.rect.y + br.nB.ry * pageB.rect.h;ctx.strokeStyle = 'rgba(226, 232, 240, 0.22)';ctx.lineWidth = 0.75;ctx.beginPath();ctx.moveTo(x1, y1);ctx.lineTo(x2, y2);ctx.stroke();
+const pt = (tick * 0.008 + bIdx * 0.17) % 1;ctx.fillStyle = br.color;ctx.beginPath();ctx.arc(x1 + (x2 - x1) * pt, y1 + (y2 - y1) * pt, 1.5, 0, Math.PI * 2);ctx.fill();
+});ctx.restore();
+miniPages.forEach((page, pIdx) => {
+const { x, y, w, h } = page.rect;
+page.nodes.forEach((nd) => {
+nd.rx += nd.vx;
+nd.ry += nd.vy;
+if (nd.rx < 0.07 || nd.rx > 0.93) nd.vx *= -1;
+if (nd.ry < 0.13 || nd.ry > 0.92) nd.vy *= -1;
+});
+const cr = page.crawler;
+const dx = cr.targetRx - cr.rx;
+const dy = cr.targetRy - cr.ry;
+const d = Math.hypot(dx, dy);
+if (d < 0.03) {
+cr.waitTicks++;
+if (cr.waitTicks > 18 + (pIdx % 7) * 4) {
+cr.waitTicks = 0;
+const nextN = page.nodes[Math.floor(Math.random() * page.nodes.length)];
+if (nextN) {
+cr.targetRx = Math.max(0.08, Math.min(0.92, nextN.rx + (Math.random() - 0.5) * 0.18));
+cr.targetRy = Math.max(0.14, Math.min(0.91, nextN.ry + (Math.random() - 0.5) * 0.18));
 }
-ctx.stroke();
-ctx.restore();
+if ((tick + pIdx * 13) % 3 === 0) sproutNodeOnPage(page, cr.rx, cr.ry, false);
 }
-for (let i = 1; i < ids.length; i++) {
-const pt = nodes[ids[i]];
-const running = pt.agent.status === 'running';
-const done = pt.agent.status === 'done';
-ctx.save();
-ctx.beginPath();
-ctx.moveTo(hub.x, hub.y);
-ctx.lineTo(pt.x, pt.y);
-ctx.strokeStyle = running ? pt.agent.color : done ? 'rgba(16, 185, 129, 0.48)' : 'rgba(56, 189, 248, 0.26)';
-ctx.lineWidth = running ? 2.8 : 1.4;
-ctx.stroke();
-ctx.setLineDash([4, 9]);
-ctx.lineDashOffset = -tick * (running ? 1.8 : 0.6);
-ctx.strokeStyle = running ? '#FFFFFF' : 'rgba(34, 211, 238, 0.5)';
-ctx.lineWidth = 1.1;
-ctx.stroke();
-ctx.restore();
-}
-for (let i = activePackets.length - 1; i >= 0; i--) {
-const pkt = activePackets[i];
-const p1 = nodes[pkt.fromId];
-const p2 = nodes[pkt.toId];
-if (!p1 || !p2) {
-activePackets.splice(i, 1);
-continue;
-}
-pkt.progress += pkt.speed || 0.025;
-if (pkt.progress >= 1) {
-activePackets.splice(i, 1);
-continue;
-}
-const px = p1.x + (p2.x - p1.x) * pkt.progress;
-const py = p1.y + (p2.y - p1.y) * pkt.progress;
-pkt.trail = pkt.trail || [];
-pkt.trail.push({ x: px, y: py });
-if (pkt.trail.length > 7) pkt.trail.shift();
-for (let t = 0; t < pkt.trail.length; t++) {
-const tr = pkt.trail[t];
-const ratio = (t + 1) / pkt.trail.length;
-ctx.beginPath();
-ctx.arc(tr.x, tr.y, 1.2 + ratio * 3, 0, Math.PI * 2);
-ctx.fillStyle = pkt.color;
-ctx.globalAlpha = ratio * 0.8;
-ctx.fill();
-}
-ctx.globalAlpha = 1;
-}
-updateAndDrawCyberSpider(scoutSpider, nodes, false);
-updateAndDrawCyberSpider(mainSpider, nodes, true);
-ids.forEach((id) => {
-const { x, y, agent, hub: isHub } = nodes[id];
-const rad = isHub ? 28 : 22;
-const isRun = agent.status === 'running';
-const isDone = agent.status === 'done';
-if (isRun) {
-const pr = rad + 5 + (tick % 24) * 0.4;
-ctx.beginPath();
-ctx.arc(x, y, pr, 0, Math.PI * 2);
-ctx.strokeStyle = agent.color;
-ctx.lineWidth = 2;
-ctx.stroke();
+} else {
+const step = isExecuting ? 0.012 : 0.0065;
+cr.angle = Math.atan2(dy, dx);
+cr.rx += (dx / d) * Math.min(step, d);
+cr.ry += (dy / d) * Math.min(step, d);
+cr.legPhase += 0.35;
 }
 ctx.save();
-ctx.beginPath();
-ctx.arc(x, y, rad, 0, Math.PI * 2);
-ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-ctx.shadowColor = isRun ? agent.color : '#06B6D4';
-ctx.shadowBlur = isRun ? 16 : 6;
-ctx.fill();
-ctx.strokeStyle = isDone ? '#10B981' : isRun ? '#22D3EE' : agent.color;
-ctx.lineWidth = isRun ? 2.8 : 1.8;
-ctx.stroke();
-ctx.restore();
-ctx.font = isHub ? '17px sans-serif' : '14px sans-serif';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.fillText(agent.icon, x, y + 1);
-ctx.font = '700 10.5px Inter, sans-serif';
-ctx.fillStyle = '#F8FAFC';
-ctx.fillText(agent.shortName, x, y + rad + 13);
-const stTxt = isRun ? '⚡ 蜘蛛织网中' : isDone ? `✔ ${agent.tokens}tok` : agent.status === 'error' ? '✕ 异常' : '待命';
-ctx.font = '500 9px monospace';
-ctx.fillStyle = isDone ? '#34D399' : isRun ? '#22D3EE' : '#64748B';
-ctx.fillText(stTxt, x, y + rad + 24);
+page.edges.forEach((edge) => {
+const n1 = page.nodes[edge.a];
+const n2 = page.nodes[edge.b];
+if (!n1 || !n2) return;
+if (edge.prog < 1) edge.prog = Math.min(1, edge.prog + 0.045);
+const x1 = x + n1.rx * w;
+const y1 = y + n1.ry * h;
+const x2 = x1 + ((x + n2.rx * w) - x1) * edge.prog;
+const y2 = y1 + ((y + n2.ry * h) - y1) * edge.prog;ctx.strokeStyle = edge.color;ctx.globalAlpha = 0.26;ctx.lineWidth = 1.6;ctx.beginPath();ctx.moveTo(x1, y1);ctx.lineTo(x2, y2);ctx.stroke();ctx.strokeStyle = 'rgba(241, 245, 249, 0.72)';ctx.globalAlpha = 0.78;ctx.lineWidth = 0.75;ctx.beginPath();ctx.moveTo(x1, y1);ctx.lineTo(x2, y2);ctx.stroke();
+});ctx.restore();
+const crX = x + cr.rx * w;
+const crY = y + cr.ry * h;ctx.save();
+page.nodes.forEach((nd) => {
+const nx = x + nd.rx * w;
+const ny = y + nd.ry * h;
+const dPx = Math.hypot(nx - crX, ny - crY);
+const reach = Math.min(w, h) * 0.36;
+if (dPx < reach) {
+ctx.strokeStyle = cr.color;ctx.globalAlpha = (1 - dPx / reach) * 0.55;ctx.lineWidth = 0.85;ctx.beginPath();ctx.moveTo(crX, crY);ctx.lineTo(nx, ny);ctx.stroke();
+}
+});ctx.restore();ctx.save();
+page.nodes.forEach((nd) => {
+const nx = x + nd.rx * w;
+const ny = y + nd.ry * h;
+const age = Math.min(1, (tick - nd.bornTick) / 18);
+const rad = nd.r * (0.4 + 0.6 * age);ctx.fillStyle = nd.color;ctx.globalAlpha = 0.25 * age;ctx.beginPath();ctx.arc(nx, ny, rad * 2.6, 0, Math.PI * 2);ctx.fill();ctx.globalAlpha = 0.95 * age;ctx.beginPath();ctx.arc(nx, ny, rad, 0, Math.PI * 2);ctx.fill();
+if (nd.hasLabel && w > 72) {
+ctx.font = '600 7.5px monospace';
+const tw = ctx.measureText(nd.label).width + 6;
+const bx = Math.min(x + w - tw - 2, Math.max(x + 2, nx + 4));
+const by = Math.min(y + h - 11, Math.max(y + 12, ny - 5));ctx.fillStyle = 'rgba(9, 13, 22, 0.88)';ctx.strokeStyle = nd.color;ctx.lineWidth = 0.7;ctx.fillRect(bx, by, tw, 10);ctx.strokeRect(bx, by, tw, 10);ctx.fillStyle = '#F8FAFC';ctx.textAlign = 'left';ctx.textBaseline = 'middle';ctx.fillText(nd.label, bx + 3, by + 5.5);
+}
+});ctx.restore();
+drawMiniCrawlerSpider(crX, crY, cr.angle, cr.legPhase, cr.color, Math.min(1.05, Math.max(0.7, w / 110)));
+});
+if (tick % 85 === 0) {
+const sp = miniPages[Math.floor(Math.random() * miniPages.length)];
+jevStreams.push({
+sx: sp.rect.x + sp.crawler.rx * sp.rect.w,
+sy: sp.rect.y + sp.crawler.ry * sp.rect.h,
+tx: cw * 0.12, ty: ch - 4, prog: 0,
+color: Math.random() < 0.82 ? '#EC4899' : '#38BDF8',
+keep: Math.random() < 0.82,
+pageTitle: sp.title
 });
 }
-ctx.save();
-ctx.font = '600 9.5px monospace';
-ctx.fillStyle = 'rgba(34, 211, 238, 0.8)';
-ctx.textAlign = 'left';
-ctx.fillText('CYBER-SPIDER // IK-8 GAIT: ACTIVE', 12, 18);
-ctx.textAlign = 'right';
-ctx.fillStyle = 'rgba(168, 85, 247, 0.85)';
-ctx.fillText('触屏滑动可吸引蜘蛛跟随', cw - 12, 18);
-ctx.restore();
+for (let i = jevStreams.length - 1; i >= 0; i--) {
+const st = jevStreams[i];
+st.prog += 0.032;
+if (st.prog >= 1) {
+crawlerTelemetry.sentToJev++;
+if (st.keep) crawlerTelemetry.kept++;
+else crawlerTelemetry.skipped++;
+const hEl = document.getElementById('jevActivePageHint');
+if (hEl) hEl.textContent = `● 已织网评估: ${st.pageTitle}`;
+updateTopoHudDOM();
+jevStreams.splice(i, 1);
+continue;
+}
+const cxP = st.sx + (st.tx - st.sx) * st.prog;
+const cyP = st.sy + (st.ty - st.sy) * st.prog;ctx.save();ctx.strokeStyle = st.color;ctx.globalAlpha = (1 - st.prog) * 0.55;ctx.lineWidth = 1.2;ctx.beginPath();ctx.moveTo(st.sx, st.sy);ctx.lineTo(cxP, cyP);ctx.stroke();ctx.fillStyle = '#FFFFFF';ctx.shadowColor = st.color;ctx.shadowBlur = 8;ctx.globalAlpha = 1;ctx.beginPath();ctx.arc(cxP, cyP, 2.5, 0, Math.PI * 2);ctx.fill();ctx.restore();
+}
+updateAndDrawCyberSpider(scoutSpider, false);
+updateAndDrawCyberSpider(mainSpider, true);
 requestAnimationFrame(renderTopologyLoop);
 }
-function setSpiderPointer(clientX, clientY) {
+function setSpiderPointer(clientX, clientY, sprout = false) {
 const rect = canvas.getBoundingClientRect();
-pointerTarget.x = Math.max(24, Math.min(cw - 24, clientX - rect.left));
-pointerTarget.y = Math.max(24, Math.min(ch - 24, clientY - rect.top));
+const px = Math.max(12, Math.min(cw - 12, clientX - rect.left));
+const py = Math.max(12, Math.min(ch - 12, clientY - rect.top));
+pointerTarget.x = px;
+pointerTarget.y = py;
 pointerTarget.active = true;
-pointerTarget.expireTick = tick + 180;
+pointerTarget.expireTick = tick + 190;
+if (sprout) {
+for (const page of miniPages) {
+const r = page.rect;
+if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) {
+const rx = (px - r.x) / r.w;
+const ry = (py - r.y) / r.h;
+page.crawler.targetRx = rx;
+page.crawler.targetRy = ry;
+sproutNodeOnPage(page, rx, ry, true);
+break;
+}
+}
+}
 }
 canvas.addEventListener('mousemove', (e) => {
+setSpiderPointer(e.clientX, e.clientY, tick % 8 === 0);
+});
+canvas.addEventListener('touchmove', (e) => {
+if (e.touches && e.touches[0]) {
+setSpiderPointer(e.touches[0].clientX, e.touches[0].clientY, tick % 5 === 0);
+}
+}, { passive: true });
+canvas.addEventListener('click', (e) => {
 workflowSFX.spiderZap();
-setSpiderPointer(e.clientX, e.clientY);
+setSpiderPointer(e.clientX, e.clientY, true);
 });
 canvas.addEventListener('touchmove', (e) => {
 if (e.touches && e.touches[0]) {
@@ -2121,9 +2127,54 @@ document.getElementById('iosClock').textContent = new Date().toTimeString().slic
 };
 updateClock();
 setInterval(updateClock, 30000);
+document.getElementById('spawnWebBurstBtn').addEventListener('click', () => {
+workflowSFX.parallelFork();
+miniPages.forEach(p => { sproutNodeOnPage(p); sproutNodeOnPage(p); });
+rebuildCrossBridges();
+showToast('🕷️ 128 爬虫并发织网：已在 12 个页面长出新彩色节点');
+});
+document.getElementById('toggleFullImmersionBtn').addEventListener('click', () => {
+crawlerTelemetry.fullImmersion = !crawlerTelemetry.fullImmersion;
+const topoSec = document.getElementById('tabViewTopology');
+const navBar = document.getElementById('bottomNavBar');
+const btn = document.getElementById('toggleFullImmersionBtn');
+if (crawlerTelemetry.fullImmersion) {
+topoSec.classList.remove('bottom-[54px]');
+topoSec.classList.add('bottom-0');
+navBar.classList.add('hidden');
+btn.textContent = '⛶ 退出全屏';
+} else {
+topoSec.classList.remove('bottom-0');
+topoSec.classList.add('bottom-[54px]');
+navBar.classList.remove('hidden');
+btn.textContent = '⛶ 沉浸';
+}
+setTimeout(resizeStageCanvas, 40);
+});
+document.getElementById('exitTopoToWorkBtn').addEventListener('click', () => {
+document.getElementById('bottomNavBar').classList.remove('hidden');
+switchNavTab('workspace');
+});
+document.getElementById('jevKeepBtn').addEventListener('click', () => {
+workflowSFX.nodeCompleteAndCompact();
+crawlerTelemetry.kept++;
+crawlerTelemetry.sentToJev++;
+updateTopoHudDOM();
+showToast('JEV 已收录当前织网节点 (KEPT +1)');
+});
+document.getElementById('jevSkipBtn').addEventListener('click', () => {
+workflowSFX.uiClick();
+crawlerTelemetry.skipped++;
+updateTopoHudDOM();
+showToast('已跳过低优节点 (SKIPPED +1)');
+});
+document.getElementById('jevOrbBtn').addEventListener('click', () => {
+openAgentModal(agents[0].id);
+});
 renderPipelineCards();
 renderAgentSettings();
 syncHeaderAndMetrics();
+switchNavTab('topology');
 resizeStageCanvas();
 renderTopologyLoop();
 }
