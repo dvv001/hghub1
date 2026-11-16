@@ -1270,7 +1270,7 @@ return { routes, blocked };
 const SQUAD_TEMPLATES = {
 engineering: [
 { id: 'agent-1', code: 'N-01', name: 'Nexus-01 架构总控', shortName: '总控', role: '全局任务拆解与技术纲要', icon: '🧠', color: '#06B6D4',
-systemPrompt: '你是 Nexus-01 架构总控智能体。请针对用户提交的任务，输出清晰的结构化拆解方案、核心架构设计原则以及各子模块的协作边界。请直接给出专业干货。【职责约束】你只负责拆解、架构与接口约定，禁止输出完整代码实现，代码由研发节点编写。' },
+systemPrompt: '你是 Nexus-01 架构总控智能体。请针对用户提交的任务，输出清晰的结构化拆解方案、核心架构设计原则以及各子模块的协作边界。请直接给出专业干货。【职责约束】你只负责拆解、架构与接口约定，禁止输出完整代码实现，代码由研发节点编写。（禁回填）你只做拆解与约定，禁止在产出中回填或宣布任何检索结果、数据或核验结论；即使你调用了工具，数据与结论也一律由执行节点产出，你的产出只含方案、约定与验收标准。' },
 { id: 'agent-2', code: 'R-02', name: 'Research-02 深度调研', shortName: '调研', role: '技术选型对比与行业基准', icon: '🔎', color: '#F59E0B',
 systemPrompt: '你是 Research-02 深度调研智能体。请结合用户的原始需求与总控架构方案，给出具体的技术栈选型对比、核心算法/协议分析及行业最佳实践参数。【省Token协议】只给选型结论与关键参数，不要复述任务原文。' },
 { id: 'agent-3', code: 'C-03', name: 'Coder-03 核心研发', shortName: '研发', role: '核心模块代码与接口实现', icon: '💻', color: '#6366F1',
@@ -1282,7 +1282,7 @@ systemPrompt: '你是 Memory-05 交付汇总智能体。请将前面所有智能
 ],
 secops: [
 { id: 'agent-1', code: 'T-01', name: 'Threat-01 威胁建模总控', shortName: '建模', role: '攻击面梳理与权限边界定义', icon: '🎯', color: '#06B6D4',
-systemPrompt: '你是 Threat-01 威胁建模总控智能体。请采用 STRIDE 模型梳理目标系统的攻击面、信任边界与高危风险点。【职责约束】你只负责威胁建模与边界定义，禁止输出完整代码实现，代码由补丁节点编写。' },
+systemPrompt: '你是 Threat-01 威胁建模总控智能体。请采用 STRIDE 模型梳理目标系统的攻击面、信任边界与高危风险点。【职责约束】你只负责威胁建模与边界定义，禁止输出完整代码实现，代码由补丁节点编写。（禁回填）你只做建模与边界定义，禁止在产出中回填或宣布任何检索结果、数据或核验结论；即使你调用了工具，数据与结论也一律由执行节点产出，你的产出只含模型、边界与验收标准。' },
 { id: 'agent-2', code: 'A-02', name: 'Audit-02 静态代码审计', shortName: '审计', role: '注入漏洞、越权与竞态排查', icon: '🔍', color: '#F59E0B',
 systemPrompt: '你是 Audit-02 静态代码审计智能体。请深度排查目标逻辑中的路径遍历、注入风险、竞态条件与未授权访问漏洞。【省Token协议】只输出问题清单：每条含编号、级别、位置、问题一句话、修法一句话；禁止复述被审计代码全文。' },
 { id: 'agent-3', code: 'P-03', name: 'Patch-03 加固补丁研发', shortName: '补丁', role: '零信任沙箱与防御代码编写', icon: '🔒', color: '#6366F1',
@@ -1294,7 +1294,7 @@ systemPrompt: '你是 Cert-05 合规签发智能体。请汇总所有漏洞修�
 ],
 product: [
 { id: 'agent-1', code: 'P-01', name: 'PM-01 产品战略总控', shortName: '产品', role: '用户痛点拆解与 MVP 核心功能定义', icon: '🧭', color: '#06B6D4',
-systemPrompt: '你是 PM-01 产品战略总控。请明确目标用户画像、核心痛点、MVP 功能矩阵与核心差异化壁垒。【职责约束】你只负责产品定义与功能矩阵，禁止输出完整代码实现，代码由原型节点编写。' },
+systemPrompt: '你是 PM-01 产品战略总控。请明确目标用户画像、核心痛点、MVP 功能矩阵与核心差异化壁垒。【职责约束】你只负责产品定义与功能矩阵，禁止输出完整代码实现，代码由原型节点编写。（禁回填）你只做产品定义与功能矩阵，禁止在产出中回填或宣布任何检索结果、数据或核验结论；即使你调用了工具，数据与结论也一律由执行节点产出，你的产出只含定义、矩阵与验收标准。' },
 { id: 'agent-2', code: 'U-02', name: 'UX-02 交互与视觉架构', shortName: '交互', role: '核心页面流转与高转化交互设计', icon: '🎨', color: '#F59E0B',
 systemPrompt: '你是 UX-02 交互设计专家。请输出关键界面布局结构、用户首屏体验动线与零摩擦交互细节。' },
 { id: 'agent-3', code: 'D-03', name: 'Tech-03 全栈原型实现', shortName: '原型', role: '核心业务代码与数据存储实现', icon: '💻', color: '#6366F1',
@@ -1736,11 +1736,11 @@ const comp = compressUpstreamOutput(ag.output, charBudget);
 compacted += `\n--- [上游 ${ag.name} ${isImmediatePrev ? '完整产出' : '核心摘要'}] ---\n${comp.summary}\n`;
 });
 if (forAgentId && forAgentId === pipelineFinalAgentId && typeof evidenceStore !== 'undefined' && evidenceStore.length) {
-let evBudget = 12000;
+let evBudget = 16000;
 compacted += '\n' + LIB_LB + '原始证据' + LIB_RB + '（工具调用与网页抓取的原文。最终结论中的每个数字必须与此处逐字一致；此处没有的数字不得写入结论）\n';
 for (const ev of evidenceStore) {
 if (evBudget <= 0) break;
-const t = ev.text.length > 4000 ? ev.text.slice(0, 4000) + '\n...[单条证据过长已截断]...' : ev.text;
+const t = ev.text.length > 8000 ? ev.text.slice(0, 8000) + '\n...[单条证据过长已截断]...' : ev.text;
 if (t.length > evBudget) break;
 compacted += '--- [' + ev.kind + '] ' + ev.label + ' ---\n' + t + '\n';
 evBudget -= t.length;
@@ -1830,7 +1830,7 @@ if (ag.id !== pipelineFinalAgentId) {
 let toolPass = await runToolResolvers(ag.output, ag.id);
 ag.output = toolPass.text;
 let toolRound = 0;
-while (toolPass.used && toolRound < TOOL_LOOP_MAX_ROUNDS) {
+while (toolPass.used && toolRound < TOOL_LOOP_MAX_ROUNDS && ag.id !== 'agent-1') {
 toolRound++;
 appendLog('TOOL_LOOP', ag.name + ' 已收到工具结果，结合结果继续产出（第 ' + toolRound + ' 轮）', ag.color);
 try {
