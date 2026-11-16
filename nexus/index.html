@@ -484,6 +484,7 @@ Claw-Code 自动内核与 API 调度日志
 <span id="toastText">已保存</span>
 </div>
 <script>
+/* ===== 传输层 TRANSPORT：模型 API 适配（OpenAI 兼容 / Anthropic 原生，供应商预设） ===== */
 const PROVIDER_PRESETS = {
 deepseek: { name: 'DeepSeek 官方', baseUrl: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat' },
 deepseek_r1: { name: 'DeepSeek R1 (推理)', baseUrl: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-reasoner' },
@@ -573,6 +574,12 @@ const MCP_RUN_CALL_LIMIT = 5;
 const MCP_RELAY_URL = 'https://hghub-proxy.liguohao770801114.workers.dev/mcp';
 const LIB_LB = String.fromCharCode(12304);
 const LIB_RB = String.fromCharCode(12305);
+/* ===== 状态层 STATE：localStorage 统一收口（nxStore） ===== */
+const nxStore = {
+getArr(key) { try { const v = localStorage.getItem(key); if (v) { const p = JSON.parse(v); if (Array.isArray(p)) return p; } } catch (e) {} return []; },
+set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} },
+has(key) { try { return localStorage.getItem(key) !== null; } catch (e) { return false; } }
+};
 let libSkills = [];
 let libMcpServers = [];
 let libInstructions = [];
@@ -584,8 +591,8 @@ let evidenceStore = [];
 function recordEvidence(kind, label, text) { try { evidenceStore.push({ kind: kind, label: label, text: String(text || '') }); if (evidenceStore.length > 6) evidenceStore.shift(); } catch (e) {} }
 
 function libUid(prefix) { return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);}
-function libLoadArr(key) { try { const v = localStorage.getItem(key); if (v) { const p = JSON.parse(v); if (Array.isArray(p)) return p;}} catch (e) {} return [];}
-function libSave() { try { localStorage.setItem(LIB_SKILLS_KEY, JSON.stringify(libSkills)); localStorage.setItem(LIB_MCP_KEY, JSON.stringify(libMcpServers)); localStorage.setItem(LIB_INST_KEY, JSON.stringify(libInstructions));} catch (e) {}}
+function libLoadArr(key) { return nxStore.getArr(key); }
+function libSave() { nxStore.set(LIB_SKILLS_KEY, libSkills); nxStore.set(LIB_MCP_KEY, libMcpServers); nxStore.set(LIB_INST_KEY, libInstructions); }
 function libSeedSkills() {
 return [
 { id: libUid('sk'), name: '中文技术文档总结', desc: '总结英文/中文技术文档页面时用：分层提炼、保留数字与限制条件', body: '## 技能：中文技术文档总结\n按以下规程总结技术文档：\n1. 一句话定位：这是什么产品/能力，处于什么阶段（beta/正式）。\n2. 核心要点 3–7 条：解决什么问题、关键能力、使用方式、限制条件。\n3. 数字必须逐字核对原文（性能、配额、价格、覆盖率），不得四舍五入或臆造。\n4. 单列「做不到/不支持」清单。\n5. 接入方式逐项列全（API、绑定、协议、工具）。\n6. 只陈述页面明示内容；页面未提及的写「页面未明确」，禁止引入外部推断。', agents: ['agent-2'], enabled: true},
@@ -594,7 +601,7 @@ return [
 ];
 }
 try {
-if (localStorage.getItem(LIB_SKILLS_KEY) === null) { libSkills = libSeedSkills(); try { localStorage.setItem(LIB_SKILLS_KEY, JSON.stringify(libSkills));} catch (e) {}}
+if (!nxStore.has(LIB_SKILLS_KEY)) { libSkills = libSeedSkills(); nxStore.set(LIB_SKILLS_KEY, libSkills); }
 else libSkills = libLoadArr(LIB_SKILLS_KEY);
 libMcpServers = libLoadArr(LIB_MCP_KEY);
 libInstructions = libLoadArr(LIB_INST_KEY);
@@ -619,6 +626,7 @@ libMcpServers.filter(sv => libAssigned(sv, forAgentId)).forEach(sv => {
 (mcpToolIndex[sv.name] || []).forEach(t => toolLines.push('- ' + sv.name + ' / ' + t.name + '：' + (t.description || '')));
 });
 if (toolLines.length) out += '\n' + LIB_LB + 'MCP 工具' + LIB_RB + '需要调用外部工具时，在产出中单独一行写 [[MCP:服务器名:工具名:{"参数名":值}]]，系统会执行并把结果替换到标记处。可用工具：\n' + toolLines.join('\n') + '\n';
+out += '\n' + LIB_LB + '工具使用方式' + LIB_RB + '你调用的工具（抓取/技能/MCP）执行后，系统会把结果交回给你，并请你结合结果给出本节点的最终版产出；最终版要真正使用结果中的数据，不要停留在等待或计划。\n';
 return out;
 }
 
@@ -1715,6 +1723,7 @@ const srcName = srcAgent ? srcAgent.name : agentId;
 return '\n\n---\n📎 附：最终代码（由系统按引用自动附上 ' + srcName + ' 的原文，未经改写）\n\n' + payload + '\n';
 });
 }
+/* ===== 引擎层 ENGINE：上下文构建 / 压缩 / 证据保真 ===== */
 function buildAutoClawContext(taskText, completedAgents, forAgentId) {
 // 省Token v2 分层预算: 直属上游给足预算; 更早节点只留 700 字摘要; 代码由 compressUpstreamOutput 原样传递。
 let compacted = `${COMPACT_CONTINUATION_PREAMBLE}\n【用户原始任务】：\n${taskText}\n`;
@@ -1749,6 +1758,24 @@ compacted += '\n【联网抓取】如需读取某个具体网页的正文，在�
 compacted += buildLibraryContext(forAgentId);
 compacted += `\n${COMPACT_DIRECT_RESUME_INSTRUCTION}`;
 return compacted;
+}
+/* ===== 工具层 TOOLS：统一注册表与分发（加新工具 = 加一个适配器，不动引擎） ===== */
+const TOOL_LOOP_MAX_ROUNDS = 2;
+const toolAdapters = [
+{ id: 'fetch', test: (t) => /\[\[FETCH:[^\]]+\]\]/.test(t), resolve: (t, agentId) => resolveFetchMarkers(t) },
+{ id: 'skill', test: (t) => /\[\[SKILL:[^\]]+\]\]/.test(t), resolve: (t, agentId) => resolveSkillMarkers(t, agentId) },
+{ id: 'mcp', test: (t) => t.indexOf('[[MCP:') >= 0, resolve: (t, agentId) => resolveMcpMarkers(t, agentId) }
+];
+async function runToolResolvers(text, agentId) {
+let out = String(text || '');
+let used = false;
+for (const ad of toolAdapters) {
+if (ad.test(out)) { used = true; out = await ad.resolve(out, agentId); }
+}
+return { text: out, used };
+}
+function stripToolMarkers(text) {
+return String(text || '').replace(/\[\[FETCH:[^\]]+\]\]/g, '（最终交付节点不执行抓取）').replace(/\[\[SKILL:[^\]]+\]\]/g, '（最终交付节点不加载技能）').replace(/\[\[MCP:[^\]]+\]\]/g, '（最终交付节点不调用工具）');
 }
 async function executeSingleAgentNode(ag, hubId, promptForAgent) {
 ag.status = 'running';
@@ -1797,13 +1824,47 @@ ag.status = 'done';
 ag.output = res.content;
 artifactStore[ag.id] = res.content;
 ag.output = (ag.id === pipelineFinalAgentId) ? resolveAttachMarkers(ag.output) : ag.output.replace(/\[\[ATTACH_CODE:agent-\d+\]\]/g, '(代码原文见原节点报告)');
-if (ag.id!== pipelineFinalAgentId) { ag.output = await resolveFetchMarkers(ag.output); ag.output = await resolveSkillMarkers(ag.output, ag.id); ag.output = await resolveMcpMarkers(ag.output, ag.id); }
-else { ag.output = ag.output.replace(/\[\[FETCH:[^\]]+\]\]/g, '（最终交付节点不执行抓取）').replace(/\[\[SKILL:[^\]]+\]\]/g, '（最终交付节点不加载技能）').replace(/\[\[MCP:[^\]]+\]\]/g, '（最终交付节点不调用工具）');}
-ag.latencyMs = res.latencyMs;
-ag.tokens = res.tokens;
+let extraTokens = 0;
+let extraLatency = 0;
+if (ag.id !== pipelineFinalAgentId) {
+let toolPass = await runToolResolvers(ag.output, ag.id);
+ag.output = toolPass.text;
+let toolRound = 0;
+while (toolPass.used && toolRound < TOOL_LOOP_MAX_ROUNDS) {
+toolRound++;
+appendLog('TOOL_LOOP', ag.name + ' 已收到工具结果，结合结果继续产出（第 ' + toolRound + ' 轮）', ag.color);
+try {
+const contPrompt = '【工具结果已返回】你上一版产出中调用的工具已经执行完毕，结果已替换到对应标记处。带结果的完整产出如下：\n\n' + ag.output + '\n\n请基于这些真实结果，给出你本节点的最终版产出：完整替换上一版，真正使用结果中的数据与出处，不要再写等待结果、即将检索之类的话。如确有必要可以再调用工具，但不要重复调用同一个工具或同一个网址。';
+const contRes = await requestLLM({
+systemPrompt: ag.systemPrompt,
+userPrompt: contPrompt,
+signal: abortCtrl.signal,
+onStreamUpdate: (partial) => {
+ag.output = partial;
+renderPipelineCards();
+}
+});
+extraTokens += contRes.tokens;
+extraLatency += contRes.latencyMs;
+ag.output = contRes.content;
+artifactStore[ag.id] = contRes.content;
+ag.output = ag.output.replace(/\[\[ATTACH_CODE:agent-\d+\]\]/g, '(代码原文见原节点报告)');
+toolPass = await runToolResolvers(ag.output, ag.id);
+ag.output = toolPass.text;
+} catch (loopErr) {
+if (loopErr.name === 'AbortError') throw loopErr;
+appendLog('TOOL_LOOP', ag.name + ' 工具循环续写失败，保留上一版产出：' + loopErr.message, '#F59E0B');
+break;
+}
+}
+} else {
+ag.output = stripToolMarkers(ag.output);
+}
+ag.latencyMs = res.latencyMs + extraLatency;
+ag.tokens = res.tokens + extraTokens;
 ag.cachedHit = Boolean(res.cachedHit);
-cumulativeTokens += res.tokens;
-cumulativeLatencyMs += res.latencyMs;
+cumulativeTokens += res.tokens + extraTokens;
+cumulativeLatencyMs += res.latencyMs + extraLatency;
 if (res.content) {
 const comp = compressUpstreamOutput(res.content, apiSettings.compactMaxChars);
 tridentStats.originalChars += comp.originalChars;
