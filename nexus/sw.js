@@ -1,6 +1,6 @@
 // NexusAI PWA Service Worker — app shell cache (stale-while-revalidate for GET).
 // API calls are POST and are never intercepted.
-const CACHE = 'nexusai-v4';
+const CACHE = 'nexusai-v5';
 const SHELL = [
   './',
   './index.html',
