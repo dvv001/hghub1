@@ -267,6 +267,14 @@ Claw-Code 自动内核与 API 调度日志
 <label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgApiKey">API Key (必填)</label>
 <input id="cfgApiKey" type="password" placeholder="sk-..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
 </div>
+<div>
+<label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgCfAccountId">Cloudflare Account ID（可选 · Kitesurf 联网抓取）</label>
+<input id="cfgCfAccountId" type="text" placeholder="Cloudflare 账号 ID" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+</div>
+<div>
+<label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgCfToken">Cloudflare API Token（Browser Rendering 权限）</label>
+<input id="cfgCfToken" type="password" placeholder="只存本机浏览器，勿外传" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+</div>
 <div class="grid grid-cols-2 gap-2.5">
 <div>
 <label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgModel">模型名称 (Model)</label>
@@ -399,7 +407,9 @@ apiKey: '',
 model: 'deepseek-chat',
 temperature: 0.3,
 stream: true,
-compactMaxChars: 1600
+compactMaxChars: 1600,
+cfAccountId: '',
+cfToken: ''
 };
 try {
 const saved = localStorage.getItem('nexusai_ios_real_cfg');
@@ -410,6 +420,8 @@ if (parsed.apiKey) apiSettings.apiKey = parsed.apiKey;
 if (parsed.model) apiSettings.model = parsed.model;
 if (typeof parsed.temperature === 'number') apiSettings.temperature = parsed.temperature;
 if (typeof parsed.stream === 'boolean') apiSettings.stream = parsed.stream;
+if (parsed.cfAccountId) apiSettings.cfAccountId = parsed.cfAccountId;
+if (parsed.cfToken) apiSettings.cfToken = parsed.cfToken;
 }
 } catch (e) {}
 function getCanonicalModelName(model) {
@@ -448,6 +460,73 @@ compressedChars: 0
 const promptCacheStore = new Map();
 const artifactStore = {};
 let pipelineFinalAgentId = null;
+// ===== Kitesurf 联网抓取（Cloudflare Browser Run · Quick Actions · browser=kitesurf）=====
+const KITESURF_PAGE_CAP = 5000;
+const KITESURF_RUN_FETCH_LIMIT = 5;
+const kitesurfCache = {};
+let kitesurfFetchCount = 0;
+let prefetchedPages = [];
+
+function kitesurfConfigured() {
+return Boolean((apiSettings.cfAccountId || '').trim() && (apiSettings.cfToken || '').trim());
+}
+
+function extractUrls(text) {
+const found = String(text || '').match(/https?:\/\/[^\s<>"'，。；、（）【】「」\u4e00-\u9fff\uff00-\uffef]+/g) || [];
+const seen = new Set();
+const urls = [];
+for (let u of found) {
+u = u.replace(/[，。；、）】]+$/, '');
+if (!seen.has(u)) { seen.add(u); urls.push(u);}
+}
+return urls;
+}
+
+async function fetchPageViaKitesurf(url) {
+if (kitesurfCache[url]) return kitesurfCache[url];
+if (kitesurfFetchCount >= KITESURF_RUN_FETCH_LIMIT) return null;
+kitesurfFetchCount++;
+const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' + encodeURIComponent(apiSettings.cfAccountId.trim()) + '/browser-run/markdown?browser=kitesurf';
+const resp = await fetch(endpoint, {
+method: 'POST',
+headers: { 'Authorization': 'Bearer ' + apiSettings.cfToken.trim(), 'Content-Type': 'application/json'},
+body: JSON.stringify({ url: url})
+});
+const data = await resp.json().catch(() => null);
+if (!resp.ok ||!data || data.success === false) {
+const msg = (data && data.errors && data.errors[0] && data.errors[0].message) || ('HTTP ' + resp.status);
+throw new Error(msg);
+}
+let text = '';
+const r = data.result;
+if (typeof r === 'string') text = r;
+else if (r && typeof r === 'object') text = r.markdown || r.content || r.html || '';
+if (text.length > KITESURF_PAGE_CAP) text = text.slice(0, KITESURF_PAGE_CAP) + '\n...（正文过长，已截断至 ' + KITESURF_PAGE_CAP + ' 字）';
+kitesurfCache[url] = text;
+return text;
+}
+
+async function resolveFetchMarkers(output) {
+const re = /\[\[FETCH:(https?:\/\/[^\]\s]+)\]\]/g;
+const urls = [...new Set([...String(output || '').matchAll(re)].map(m => m[1]))];
+if (!urls.length) return output;
+let result = String(output);
+for (const url of urls) {
+const marker = '[[FETCH:' + url + ']]';
+if (!kitesurfConfigured()) {
+result = result.split(marker).join('（未配置 Cloudflare 凭证，未能抓取 ' + url + '）');
+continue;
+}
+try {
+const page = await fetchPageViaKitesurf(url);
+result = result.split(marker).join(page ? '\n【Kitesurf 抓取 ' + url + '】\n' + page + '\n' : '（本次运行抓取次数已达上限，未抓取 ' + url + '）');
+} catch (e) {
+result = result.split(marker).join('（抓取 ' + url + ' 失败：' + e.message + '，已跳过）');
+}
+}
+return result;
+}
+
 function fnv1aFingerprint(text) {
 let hash = 0x811c9dc5;
 for (let i = 0; i < text.length; i++) {
@@ -1040,6 +1119,12 @@ compacted += `\n--- [上游 ${ag.name} ${isImmediatePrev ? '完整产出' : '核
 if (lastCodeAgent && forAgentId && forAgentId === pipelineFinalAgentId) {
 compacted += `\n【产物引用】${lastCodeAgent.name} 的代码原文已由系统存档。整合交付时用单独一行 [[ATTACH_CODE:${lastCodeAgent.id}]] 引用即可，系统会自动附上原文，禁止凭摘要重写代码。\n`;
 }
+if (prefetchedPages.length) {
+compacted += '\n【联网抓取 · 任务页面预抓】\n' + prefetchedPages.map(p => '--- ' + p.url + ' ---\n' + p.text).join('\n') + '\n';
+}
+if (kitesurfConfigured()) {
+compacted += '\n【联网抓取】如需读取某个具体网页的正文，在产出中单独一行写 [[FETCH:完整网址]]，系统会用 Kitesurf 渲染该页并把正文替换到标记处；不要凭空编造页面内容。\n';
+}
 compacted += `\n${COMPACT_DIRECT_RESUME_INSTRUCTION}`;
 return compacted;
 }
@@ -1090,6 +1175,8 @@ ag.status = 'done';
 ag.output = res.content;
 artifactStore[ag.id] = res.content;
 ag.output = (ag.id === pipelineFinalAgentId) ? resolveAttachMarkers(ag.output) : ag.output.replace(/\[\[ATTACH_CODE:agent-\d+\]\]/g, '(代码原文见原节点报告)');
+if (ag.id!== pipelineFinalAgentId) { ag.output = await resolveFetchMarkers(ag.output);}
+else { ag.output = ag.output.replace(/\[\[FETCH:[^\]]+\]\]/g, '（最终交付节点不执行抓取）');}
 ag.latencyMs = res.latencyMs;
 ag.tokens = res.tokens;
 ag.cachedHit = Boolean(res.cachedHit);
@@ -1149,6 +1236,23 @@ showToast('请先在「API设置」中填写 API Key');
 switchNavTab('settings');
 document.getElementById('cfgApiKey').focus();
 return;
+}
+// Kitesurf 预抓：任务文本中的网址先抓回来，注入全线上下文
+prefetchedPages = [];
+Object.keys(kitesurfCache).forEach(k => delete kitesurfCache[k]);
+kitesurfFetchCount = 0;
+if (kitesurfConfigured()) {
+const taskUrls = extractUrls(taskText).slice(0, 3);
+for (const u of taskUrls) {
+try {
+const page = await fetchPageViaKitesurf(u);
+if (page) { prefetchedPages.push({ url: u, text: page}); appendLog('KITESURF', '已抓取任务页面：' + u + '（' + page.length + ' 字）', '#22D3EE');}
+} catch (e) {
+appendLog('KITESURF', '抓取 ' + u + ' 失败：' + e.message + '（已跳过，不影响运行）', '#F59E0B');
+}
+}
+} else if (extractUrls(taskText).length) {
+appendLog('KITESURF', '任务含网址但未配置 Cloudflare 凭证，智能体将看不到页面内容（可在 API设置 中填入）', '#F59E0B');
 }
 const mode = document.getElementById('execModeSelect').value;
 let runList = agents.filter(a => a.enabled);
@@ -2028,6 +2132,8 @@ apiSettings.apiKey = document.getElementById('cfgApiKey').value.trim();
 apiSettings.model = document.getElementById('cfgModel').value.trim();
 apiSettings.temperature = parseFloat(document.getElementById('cfgTemp').value) || 0.3;
 apiSettings.stream = document.getElementById('cfgStream').checked;
+apiSettings.cfAccountId = document.getElementById('cfgCfAccountId').value.trim();
+apiSettings.cfToken = document.getElementById('cfgCfToken').value.trim();
 try {
 localStorage.setItem('nexusai_ios_real_cfg', JSON.stringify(apiSettings));
 } catch (e) {}
@@ -2116,6 +2222,8 @@ document.getElementById('cfgApiKey').value = apiSettings.apiKey;
 document.getElementById('cfgModel').value = apiSettings.model;
 document.getElementById('cfgTemp').value = String(apiSettings.temperature);
 document.getElementById('cfgStream').checked = apiSettings.stream;
+document.getElementById('cfgCfAccountId').value = apiSettings.cfAccountId || '';
+document.getElementById('cfgCfToken').value = apiSettings.cfToken || '';
 const updateClock = () => {
 document.getElementById('iosClock').textContent = new Date().toTimeString().slice(0, 5);
 };
