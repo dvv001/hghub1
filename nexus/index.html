@@ -483,27 +483,35 @@ return urls;
 }
 
 async function fetchPageViaKitesurf(url) {
-if (kitesurfCache[url]) return kitesurfCache[url];
-if (kitesurfFetchCount >= KITESURF_RUN_FETCH_LIMIT) return null;
-kitesurfFetchCount++;
-const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' + encodeURIComponent(apiSettings.cfAccountId.trim()) + '/browser-run/markdown?browser=kitesurf';
-const resp = await fetch(endpoint, {
-method: 'POST',
-headers: { 'Authorization': 'Bearer ' + apiSettings.cfToken.trim(), 'Content-Type': 'application/json'},
-body: JSON.stringify({ url: url})
-});
-const data = await resp.json().catch(() => null);
-if (!resp.ok ||!data || data.success === false) {
-const msg = (data && data.errors && data.errors[0] && data.errors[0].message) || ('HTTP ' + resp.status);
-throw new Error(msg);
-}
-let text = '';
-const r = data.result;
-if (typeof r === 'string') text = r;
-else if (r && typeof r === 'object') text = r.markdown || r.content || r.html || '';
-if (text.length > KITESURF_PAGE_CAP) text = text.slice(0, KITESURF_PAGE_CAP) + '\n...（正文过长，已截断至 ' + KITESURF_PAGE_CAP + ' 字）';
-kitesurfCache[url] = text;
-return text;
+  const cached = kitesurfCache[url];
+  if (cached) {
+    if (cached.error) throw new Error(cached.error);
+    return cached.text;
+  }
+  if (kitesurfFetchCount >= KITESURF_RUN_FETCH_LIMIT) return null;
+  kitesurfFetchCount++;
+  try {
+    const resp = await fetch('https://hghub-proxy.liguohao770801114.workers.dev/browse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId: apiSettings.cfAccountId.trim(), token: apiSettings.cfToken.trim(), url: url })
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok || !data || data.success === false) {
+      const msg = (data && data.errors && data.errors[0] && data.errors[0].message) || ('HTTP ' + resp.status);
+      throw new Error(msg);
+    }
+    let text = '';
+    const r = data.result;
+    if (typeof r === 'string') text = r;
+    else if (r && typeof r === 'object') text = r.markdown || r.content || r.html || '';
+    if (text.length > KITESURF_PAGE_CAP) text = text.slice(0, KITESURF_PAGE_CAP) + '\n...（正文过长，已截断至 ' + KITESURF_PAGE_CAP + ' 字）';
+    kitesurfCache[url] = { text: text };
+    return text;
+  } catch (e) {
+    kitesurfCache[url] = { error: e.message };
+    throw e;
+  }
 }
 
 async function resolveFetchMarkers(output) {
