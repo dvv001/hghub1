@@ -824,16 +824,39 @@ function libExportJson() {
 try { persistActiveSquad(); } catch (e) {}
 return JSON.stringify({ nexusaiLibrary: 1, skills: libSkills, mcpServers: libMcpServers, instructions: libInstructions, squads: squads, activeSquadId: activeSquadId }, null, 2);
 }
+function libMergeById(existing, incoming) {
+if (!Array.isArray(incoming)) return existing;
+const out = existing.slice();
+incoming.forEach(item => {
+if (!item || typeof item !== 'object') return;
+const idx = (item.id != null)? out.findIndex(x => x && x.id === item.id): -1;
+if (idx >= 0) out[idx] = item; else out.push(item);
+});
+return out;
+}
+function libMergeSquads(existing, incoming) {
+if (!Array.isArray(incoming)) return existing;
+const out = existing.slice();
+incoming.forEach(item => {
+if (!item || typeof item !== 'object') return;
+let idx = (item.id != null)? out.findIndex(x => x && x.id === item.id): -1;
+if (idx < 0 && item.builtin) idx = out.findIndex(x => x && x.builtin === item.builtin);
+if (idx >= 0) out[idx] = item; else out.push(item);
+});
+return out;
+}
 function libImportJson(text) {
 const p = JSON.parse(String(text || ''));
 if (!p || typeof p!== 'object') throw new Error('不是有效的配置 JSON');
-if (Array.isArray(p.skills)) libSkills = p.skills;
-if (Array.isArray(p.mcpServers)) libMcpServers = p.mcpServers;
-if (Array.isArray(p.instructions)) libInstructions = p.instructions;
+if (Array.isArray(p.skills)) libSkills = libMergeById(libSkills, p.skills);
+if (Array.isArray(p.mcpServers)) libMcpServers = libMergeById(libMcpServers, p.mcpServers);
+if (Array.isArray(p.instructions)) libInstructions = libMergeById(libInstructions, p.instructions);
 libSave();
 if (Array.isArray(p.squads) && p.squads.length) {
-squads = p.squads;
-const act = squads.find(s => s.id === p.activeSquadId) || squads[0];
+const beforeId = activeSquadId;
+const beforeBuiltin = (squads.find(s => s.id === beforeId) || {}).builtin;
+squads = libMergeSquads(squads, p.squads);
+const act = squads.find(s => s.id === p.activeSquadId) || squads.find(s => s.id === beforeId) || (beforeBuiltin? squads.find(s => s.builtin === beforeBuiltin): null) || squads[0];
 loadSquadIntoRuntime(act);
 saveSquads();
 if (typeof renderSquadBar === 'function') renderSquadBar();
@@ -1360,7 +1383,7 @@ function runtimeToDef(ag) { return { id: ag.id, code: ag.code, name: ag.name, sh
 function saveSquads() { nxStore.set(SQUADS_KEY, squads); try { localStorage.setItem(ACTIVE_SQUAD_KEY, activeSquadId); } catch (e) {} }
 function persistActiveSquad() { const sq = squads.find(s => s.id === activeSquadId); if (sq) sq.agents = agents.map(runtimeToDef); saveSquads(); }
 function loadSquadIntoRuntime(sq) { agents.length = 0; (sq.agents || []).forEach(d => agents.push(defToRuntime(d))); activeSquadId = sq.id; try { inspectedAgentId = agents.length? agents[0].id: 'agent-1'; } catch (e) {} }
-function seedSquads() { return Object.keys(SQUAD_TEMPLATES).map(k => ({ id: libUid('sq'), name: SQUAD_SEED_NAMES[k] || k, builtin: k, agents: SQUAD_TEMPLATES[k].map(d => ({ ...d, enabled: true })) })); }
+function seedSquads() { return Object.keys(SQUAD_TEMPLATES).map(k => ({ id: 'sq-' + k, name: SQUAD_SEED_NAMES[k] || k, builtin: k, agents: SQUAD_TEMPLATES[k].map(d => ({ ...d, enabled: true })) })); }
 try {
 squads = nxStore.getArr(SQUADS_KEY);
 if (!squads.length) squads = seedSquads();
