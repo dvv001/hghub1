@@ -1,6 +1,6 @@
 // NexusAI PWA Service Worker — app shell cache (stale-while-revalidate for static assets).
 // API calls (POST) and dynamic GitHub API lookups are never served stale from cache.
-const CACHE = 'nexusai-v14';
+const CACHE = 'nexusai-v15';
 const SHELL = [
   './',
   './index.html',

@@ -213,23 +213,20 @@ box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
 <div class="flex items-center justify-between">
 <div>
 <h2 class="text-xs font-bold text-white">🤖 智能体编队与角色配置</h2>
-<p class="text-[10px] text-slate-400">可一键切换预设编队，或自由启停、新增节点</p>
+<p class="text-[10px] text-slate-400">编队各自独立保存：可切换预设编队，也可新建自己的编队，成员与提示词互不混杂</p>
 </div>
 <button id="openNewAgentBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition">
 ＋ 新增 Agent
 </button>
 </div>
-<div class="grid grid-cols-3 gap-1.5 pt-1">
-<button type="button" data-squad="engineering" class="squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-💻 核心研发编队
-</button>
-<button type="button" data-squad="secops" class="squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-slate-300 border border-slate-800">
-🛡️ 深度安全审计
-</button>
-<button type="button" data-squad="product" class="squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-slate-300 border border-slate-800">
-📈 产品商业全案
-</button>
+<div id="squadBar" class="flex flex-wrap gap-1.5 pt-1"></div>
+<div class="flex flex-wrap gap-1.5">
+<button id="newSquadBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition">＋ 新建编队</button>
+<button id="dupSquadBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-slate-200 border border-slate-700">复制当前编队</button>
+<button id="renameSquadBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-slate-200 border border-slate-700">重命名</button>
+<button id="delSquadBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-rose-300 border border-rose-500/40">删除编队</button>
 </div>
+<p class="text-[10px] text-slate-500">每个编队独立保存成员与提示词：切换编队不会丢失任何东西，新增 Agent 只进当前编队。</p>
 </div>
 <div id="agentConfigContainer" class="space-y-2.5"></div>
 </section>
@@ -813,7 +810,8 @@ if (!ok) throw new Error('找到 ' + paths.length + ' 个 SKILL.md，但全部�
 return ok;
 }
 function libExportJson() {
-return JSON.stringify({ nexusaiLibrary: 1, skills: libSkills, mcpServers: libMcpServers, instructions: libInstructions}, null, 2);
+try { persistActiveSquad(); } catch (e) {}
+return JSON.stringify({ nexusaiLibrary: 1, skills: libSkills, mcpServers: libMcpServers, instructions: libInstructions, squads: squads, activeSquadId: activeSquadId }, null, 2);
 }
 function libImportJson(text) {
 const p = JSON.parse(String(text || ''));
@@ -822,6 +820,14 @@ if (Array.isArray(p.skills)) libSkills = p.skills;
 if (Array.isArray(p.mcpServers)) libMcpServers = p.mcpServers;
 if (Array.isArray(p.instructions)) libInstructions = p.instructions;
 libSave();
+if (Array.isArray(p.squads) && p.squads.length) {
+squads = p.squads;
+const act = squads.find(s => s.id === p.activeSquadId) || squads[0];
+loadSquadIntoRuntime(act);
+saveSquads();
+if (typeof renderSquadBar === 'function') renderSquadBar();
+if (typeof refreshAfterSquadChange === 'function') refreshAfterSquadChange();
+}
 }
 
 // ===== 扩展库界面 =====
@@ -1331,15 +1337,30 @@ systemPrompt: '你是 Growth-04 商业化增长专家。请制定精准的定价
 systemPrompt: '你是 Launch-05 发布交付中枢。请将产品定义、交互设计、核心代码与商业化方案整合为可直接执行的上线蓝图。【省Token协议】禁止凭摘要重写或复述上游代码；（数据保真协议）最终结论中的每个数字、限额与事实都必须能在上游产出或系统原始证据中逐字找到；上游标注为未确认、MISSING 或未找到的，必须原样保留为未确认，禁止用常识或推测补全；上游互相矛盾时必须明确指出矛盾并以原始证据为准，不得自行调和；最终交付中的完整代码用单独一行 [[ATTACH_CODE:agent-3]] 引用，系统会自动附上 Tech-03 的代码原文，你只需写结论、要点、安全清单落实情况与使用说明；仅当安全清单含 P0 且必须改代码时，才亲自输出修正后的完整代码且不使用引用标记。' }
 ]
 };
-const agents = SQUAD_TEMPLATES.engineering.map(item => ({
-...item,
-enabled: true,
-status: 'idle',
-output: '',
-latencyMs: 0,
-tokens: 0,
-cachedHit: false
-}));
+/* ===== 编队管理 v15：编队独立持久化，切换不丢失 ===== */
+const SQUADS_KEY = 'nexusai_squads';
+const ACTIVE_SQUAD_KEY = 'nexusai_active_squad';
+const SQUAD_SEED_NAMES = { engineering: '💻 核心研发编队', secops: '🛡️ 深度安全审计', product: '📈 产品商业全案' };
+let squads = [];
+let activeSquadId = '';
+const agents = [];
+function defToRuntime(item) { return { ...item, enabled: item.enabled !== false, status: 'idle', output: '', latencyMs: 0, tokens: 0, cachedHit: false }; }
+function runtimeToDef(ag) { return { id: ag.id, code: ag.code, name: ag.name, shortName: ag.shortName, role: ag.role, icon: ag.icon, color: ag.color, systemPrompt: ag.systemPrompt, enabled: ag.enabled !== false }; }
+function saveSquads() { nxStore.set(SQUADS_KEY, squads); try { localStorage.setItem(ACTIVE_SQUAD_KEY, activeSquadId); } catch (e) {} }
+function persistActiveSquad() { const sq = squads.find(s => s.id === activeSquadId); if (sq) sq.agents = agents.map(runtimeToDef); saveSquads(); }
+function loadSquadIntoRuntime(sq) { agents.length = 0; (sq.agents || []).forEach(d => agents.push(defToRuntime(d))); activeSquadId = sq.id; try { inspectedAgentId = agents.length? agents[0].id: 'agent-1'; } catch (e) {} }
+function seedSquads() { return Object.keys(SQUAD_TEMPLATES).map(k => ({ id: libUid('sq'), name: SQUAD_SEED_NAMES[k] || k, builtin: k, agents: SQUAD_TEMPLATES[k].map(d => ({ ...d, enabled: true })) })); }
+try {
+squads = nxStore.getArr(SQUADS_KEY);
+if (!squads.length) squads = seedSquads();
+let savedActive = null;
+try { savedActive = localStorage.getItem(ACTIVE_SQUAD_KEY); } catch (e) {}
+const initialSquad = squads.find(s => s.id === savedActive) || squads.find(s => s.builtin === 'engineering') || squads[0];
+loadSquadIntoRuntime(initialSquad);
+saveSquads();
+} catch (e) {
+if (!agents.length) SQUAD_TEMPLATES.engineering.forEach(d => agents.push(defToRuntime({ ...d, enabled: true })));
+}
 let isExecuting = false;
 let abortCtrl = null;
 let cumulativeTokens = 0;
@@ -1592,6 +1613,7 @@ showToast('至少需保留 1 个启用的智能体');
 return;
 }
 ag.enabled = !ag.enabled;
+persistActiveSquad();
 renderAgentSettings();
 renderPipelineCards();
 syncHeaderAndMetrics();
@@ -1603,6 +1625,7 @@ const id = area.getAttribute('data-prompt-id');
 const ag = agents.find(a => a.id === id);
 if (ag) {
 ag.systemPrompt = area.value.trim();
+persistActiveSquad();
 showToast(`已更新 ${ag.shortName} 的系统提示词`);
 }
 });
@@ -2755,40 +2778,86 @@ document.body.removeChild(a);
 URL.revokeObjectURL(url);
 showToast('已导出 claw.report.v1 JSON');
 });
-document.querySelectorAll('.squad-btn').forEach(btn => {
-btn.addEventListener('click', () => {
-if (isExecuting) {
-showToast('任务执行中，请先停止任务再切换编队');
-return;
-}
-const key = btn.getAttribute('data-squad');
-const tpl = SQUAD_TEMPLATES[key];
-if (!tpl) return;
-agents.length = 0;
-tpl.forEach(item => {
-agents.push({
-...item,
-enabled: true,
-status: 'idle',
-output: '',
-latencyMs: 0,
-tokens: 0,
-cachedHit: false
-});
-});
-document.querySelectorAll('.squad-btn').forEach(b => {
-b.className = 'squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-slate-300 border border-slate-800';
-});
-btn.className = 'squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+function refreshAfterSquadChange() {
 buildFiveAgentPlanes();
 layoutFivePlanes();
 renderAgentSettings();
 renderPipelineCards();
 renderLibrary();
 syncHeaderAndMetrics();
-showToast(`已切换为「${btn.textContent.trim()}」`);
+}
+function renderSquadBar() {
+const bar = document.getElementById('squadBar');
+if (!bar) return;
+bar.innerHTML = squads.map(sq => '<button type="button" data-squad-id="' + sq.id + '" class="squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold ' + (sq.id === activeSquadId? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40': 'bg-slate-900 text-slate-300 border border-slate-800') + '">' + sq.name + '</button>').join('');
+bar.querySelectorAll('.squad-btn').forEach(btn => {
+btn.addEventListener('click', () => { try { workflowSFX.uiClick(); } catch (e) {} switchSquad(btn.getAttribute('data-squad-id')); });
 });
+}
+function switchSquad(id) {
+if (isExecuting) {
+showToast('任务执行中，请先停止任务再切换编队');
+return;
+}
+const sq = squads.find(s => s.id === id);
+if (!sq || id === activeSquadId) return;
+persistActiveSquad();
+loadSquadIntoRuntime(sq);
+saveSquads();
+renderSquadBar();
+refreshAfterSquadChange();
+showToast('已切换为「' + sq.name + '」');
+}
+document.getElementById('newSquadBtn').addEventListener('click', () => {
+if (isExecuting) { showToast('任务执行中，请先停止任务再新建编队'); return; }
+const name = (prompt('新编队名称（例如：猜生肖小队）') || '').trim();
+if (!name) return;
+persistActiveSquad();
+const sq = { id: libUid('sq'), name: name, agents: [{ id: 'agent-1', code: 'A-01', name: '新成员-01', shortName: '成员', role: '待配置角色', icon: '🤖', color: '#3B82F6', systemPrompt: '（待配置）请把这里改成这个成员的角色、方法与输出格式。', enabled: true }] };
+squads.push(sq);
+loadSquadIntoRuntime(sq);
+saveSquads();
+renderSquadBar();
+refreshAfterSquadChange();
+showToast('已新建编队「' + name + '」：改下方卡片的提示词，或点＋新增 Agent 添加成员');
 });
+document.getElementById('dupSquadBtn').addEventListener('click', () => {
+if (isExecuting) { showToast('任务执行中，请先停止任务再复制编队'); return; }
+persistActiveSquad();
+const cur = squads.find(s => s.id === activeSquadId);
+if (!cur) return;
+const copy = { id: libUid('sq'), name: cur.name + ' 副本', agents: JSON.parse(JSON.stringify(cur.agents || [])) };
+squads.push(copy);
+loadSquadIntoRuntime(copy);
+saveSquads();
+renderSquadBar();
+refreshAfterSquadChange();
+showToast('已复制为「' + copy.name + '」');
+});
+document.getElementById('renameSquadBtn').addEventListener('click', () => {
+const cur = squads.find(s => s.id === activeSquadId);
+if (!cur) return;
+const name = (prompt('编队名称', cur.name) || '').trim();
+if (!name || name === cur.name) return;
+cur.name = name;
+saveSquads();
+renderSquadBar();
+showToast('编队已改名为「' + name + '」');
+});
+document.getElementById('delSquadBtn').addEventListener('click', () => {
+if (isExecuting) { showToast('任务执行中，请先停止任务再删除编队'); return; }
+if (squads.length <= 1) { showToast('至少保留一个编队，不能删除'); return; }
+const cur = squads.find(s => s.id === activeSquadId);
+if (!cur) return;
+if (!confirm('确定删除当前编队「' + cur.name + '」？该编队的成员与提示词将一并删除。')) return;
+squads = squads.filter(s => s.id !== cur.id);
+loadSquadIntoRuntime(squads[0]);
+saveSquads();
+renderSquadBar();
+refreshAfterSquadChange();
+showToast('已删除编队「' + cur.name + '」');
+});
+renderSquadBar();
 function openNewAgentModal() {
 const m = document.getElementById('newAgentModal');
 m.classList.remove('hidden');
@@ -2810,14 +2879,16 @@ const prompt = document.getElementById('addAgPrompt').value.trim();
 if (!name || !role || !prompt) return;
 const palette = ['#3B82F6', '#8B5CF6', '#14B8A6', '#F43F5E'];
 const icons = ['🚀', '🧬', '🛰️', '🔮'];
+const usedNums = agents.map(a => { const m = /(\d+)$/.exec(a.id || ''); return m? parseInt(m[1], 10): 0; });
+const nextNum = (usedNums.length? Math.max.apply(null, usedNums): 0) + 1;
 agents.push({
-id: `agent-${agents.length + 1}`,
-code: `A-0${agents.length + 1}`,
+id: 'agent-' + nextNum,
+code: 'A-' + String(nextNum).padStart(2, '0'),
 name,
 shortName: name.slice(0, 4),
 role,
-icon: icons[agents.length % icons.length],
-color: palette[agents.length % palette.length],
+icon: icons[(nextNum - 1) % icons.length],
+color: palette[(nextNum - 1) % palette.length],
 enabled: true,
 status: 'idle',
 output: '',
@@ -2826,6 +2897,7 @@ tokens: 0,
 cachedHit: false,
 systemPrompt: prompt
 });
+persistActiveSquad();
 document.getElementById('newAgentForm').reset();
 closeNewAgentModal();
 buildFiveAgentPlanes();
