@@ -459,6 +459,17 @@ box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
 <div id="reportModalContent" class="flex-1 overflow-y-auto overflow-x-hidden my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap safe-wrap leading-relaxed min-h-[220px]"></div>
 </div>
 </div>
+<div id="squadModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+<div class="glass-panel w-full max-w-[400px] rounded-3xl p-4 border border-slate-700 space-y-3">
+<h3 id="squadModalTitle" class="text-sm font-bold text-white"></h3>
+<p id="squadModalText" class="text-[11px] text-slate-400 hidden"></p>
+<input id="squadModalInput" type="text" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+<div class="flex gap-2">
+<button id="squadModalCancel" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition">取消</button>
+<button id="squadModalOk" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">确定</button>
+</div>
+</div>
+</div>
 <div id="newAgentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
 <div class="glass-panel w-full max-w-[400px] rounded-3xl p-4 border border-slate-700 space-y-3">
 <div class="flex items-center justify-between">
@@ -2808,10 +2819,38 @@ renderSquadBar();
 refreshAfterSquadChange();
 showToast('已切换为「' + sq.name + '」');
 }
+let squadModalCb = null;
+function openSquadModal(opts) {
+const m = document.getElementById('squadModal');
+document.getElementById('squadModalTitle').textContent = opts.title || '';
+const txt = document.getElementById('squadModalText');
+if (opts.text) { txt.textContent = opts.text; txt.classList.remove('hidden'); } else { txt.classList.add('hidden'); }
+const inp = document.getElementById('squadModalInput');
+if (opts.input) { inp.classList.remove('hidden'); inp.value = opts.value || ''; inp.placeholder = opts.placeholder || ''; } else { inp.classList.add('hidden'); }
+document.getElementById('squadModalOk').textContent = opts.okText || '确定';
+squadModalCb = opts.onOk || null;
+m.classList.remove('hidden');
+m.classList.add('flex');
+if (opts.input) setTimeout(() => { try { inp.focus(); } catch (e) {} }, 50);
+}
+function closeSquadModal() {
+const m = document.getElementById('squadModal');
+m.classList.add('hidden');
+m.classList.remove('flex');
+squadModalCb = null;
+}
+document.getElementById('squadModalCancel').addEventListener('click', closeSquadModal);
+document.getElementById('squadModalOk').addEventListener('click', () => {
+const cb = squadModalCb;
+const v = document.getElementById('squadModalInput').value;
+closeSquadModal();
+if (cb) cb(v);
+});
 document.getElementById('newSquadBtn').addEventListener('click', () => {
 if (isExecuting) { showToast('任务执行中，请先停止任务再新建编队'); return; }
-const name = (prompt('新编队名称（例如：猜生肖小队）') || '').trim();
-if (!name) return;
+openSquadModal({ title: '＋ 新建编队', input: true, value: '', placeholder: '编队名称（例如：猜生肖小队）', okText: '创建', onOk: (val) => {
+const name = (val || '').trim();
+if (!name) { showToast('编队名称不能为空'); return; }
 persistActiveSquad();
 const sq = { id: libUid('sq'), name: name, agents: [{ id: 'agent-1', code: 'A-01', name: '新成员-01', shortName: '成员', role: '待配置角色', icon: '🤖', color: '#3B82F6', systemPrompt: '（待配置）请把这里改成这个成员的角色、方法与输出格式。', enabled: true }] };
 squads.push(sq);
@@ -2820,6 +2859,7 @@ saveSquads();
 renderSquadBar();
 refreshAfterSquadChange();
 showToast('已新建编队「' + name + '」：改下方卡片的提示词，或点＋新增 Agent 添加成员');
+} });
 });
 document.getElementById('dupSquadBtn').addEventListener('click', () => {
 if (isExecuting) { showToast('任务执行中，请先停止任务再复制编队'); return; }
@@ -2837,25 +2877,29 @@ showToast('已复制为「' + copy.name + '」');
 document.getElementById('renameSquadBtn').addEventListener('click', () => {
 const cur = squads.find(s => s.id === activeSquadId);
 if (!cur) return;
-const name = (prompt('编队名称', cur.name) || '').trim();
+openSquadModal({ title: '重命名编队', input: true, value: cur.name, okText: '保存', onOk: (val) => {
+const name = (val || '').trim();
 if (!name || name === cur.name) return;
 cur.name = name;
 saveSquads();
 renderSquadBar();
 showToast('编队已改名为「' + name + '」');
+} });
 });
 document.getElementById('delSquadBtn').addEventListener('click', () => {
 if (isExecuting) { showToast('任务执行中，请先停止任务再删除编队'); return; }
 if (squads.length <= 1) { showToast('至少保留一个编队，不能删除'); return; }
 const cur = squads.find(s => s.id === activeSquadId);
 if (!cur) return;
-if (!confirm('确定删除当前编队「' + cur.name + '」？该编队的成员与提示词将一并删除。')) return;
+const doomedName = cur.name;
+openSquadModal({ title: '删除编队', text: '确定删除当前编队「' + doomedName + '」？该编队的成员与提示词将一并删除，此操作不可恢复。', okText: '删除', onOk: () => {
 squads = squads.filter(s => s.id !== cur.id);
 loadSquadIntoRuntime(squads[0]);
 saveSquads();
 renderSquadBar();
 refreshAfterSquadChange();
-showToast('已删除编队「' + cur.name + '」');
+showToast('已删除编队「' + doomedName + '」');
+} });
 });
 renderSquadBar();
 function openNewAgentModal() {
