@@ -1,5 +1,6 @@
-# 网页版回测运行器: 与 multi_factor_backtest_fixed.run_backtest_pipeline 同一计算路径,
-# 仅把 PortfolioBuilder 的 top_n 与调仓频率/成本开放为参数。
+# 网页版回测运行器(多股票池): 与 multi_factor_backtest_fixed.run_backtest_pipeline
+# 同一计算路径, 仅把股票池、PortfolioBuilder 的 top_n 与调仓频率/成本开放为参数。
+# 数据为整数编码 CSV(单位 1e-4), 载入时 /10000 还原。
 # 在 Pyodide 中由 index.html 载入执行; 本地冒烟测试用同一文件保证口径一致。
 import json
 
@@ -10,13 +11,31 @@ from framework import (BacktestConfig, CostConfig, FactorCombiner,
                        FactorPreprocessor, PortfolioBuilder,
                        VectorizedBacktester)
 
-RET = pd.read_csv('data/returns_i.csv', index_col=0, parse_dates=True) / 10000.0
-FAC = pd.read_csv('data/factor_i.csv', index_col=0, parse_dates=True) / 10000.0
-_NAMES = pd.read_csv('data/names.csv', dtype={'code': str})
-NAME_MAP = dict(zip(_NAMES['symbol'], _NAMES['name']))
+_POOLS = {}
 
 
-def run_bt(top_n=50, freq='M', years=0, with_cost=True):
+def load_pool(pool):
+    """从 data/<pool>/ 载入一个股票池并缓存。"""
+    if pool in _POOLS:
+        return 'cached'
+    base = f'data/{pool}'
+    ret = pd.read_csv(f'{base}/returns_i.csv', index_col=0,
+                      parse_dates=True) / 10000.0
+    fac = pd.read_csv(f'{base}/factor_i.csv', index_col=0,
+                      parse_dates=True) / 10000.0
+    names = pd.read_csv(f'{base}/names.csv',
+                        dtype={'code': str, 'display': str})
+    _POOLS[pool] = (ret, fac, names)
+    return 'loaded'
+
+
+def run_bt(pool='hs300', top_n=50, freq='M', years=0, with_cost=True):
+    RET, FAC, NAMES = _POOLS[pool]
+    name_map = dict(zip(NAMES['symbol'], NAMES['name']))
+    if 'display' in NAMES.columns:
+        disp_map = dict(zip(NAMES['symbol'], NAMES['display']))
+    else:
+        disp_map = name_map
     ret, fac = RET, FAC
     if years and int(years) > 0:
         cutoff = RET.index[-1] - pd.DateOffset(years=int(years))
@@ -60,7 +79,8 @@ def run_bt(top_n=50, freq='M', years=0, with_cost=True):
         'nav': [round(float(x), 4) for x in nav.values],
         'dd': [round(float(x), 4) for x in dd.values],
         'yearly': {str(int(y)): round(float(v), 4) for y, v in yearly.items()},
-        'holdings': [{'symbol': s, 'name': NAME_MAP.get(s, ''),
+        'holdings': [{'symbol': s, 'code': str(disp_map.get(s, s)),
+                      'name': name_map.get(s, ''),
                       'w': round(float(w), 4)} for s, w in holds.items()],
         'hold_date': str(res.positions.index[-1].date()),
     }

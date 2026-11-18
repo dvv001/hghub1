@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f1115">
-<title>量化回测 · 沪深300动量</title>
+<title>量化回测 · 动量策略</title>
 <style>
   :root{
     --bg:#0f1115; --card:#181b21; --card2:#1f232c; --line:#2a2f3a;
@@ -66,19 +66,27 @@
 <body>
 <div id="overlay">
   <div class="spinner"></div>
-  <div style="font-size:17px; font-weight:600;">量化回测 · 沪深300动量</div>
+  <div style="font-size:17px; font-weight:600;">量化回测 · 动量策略</div>
   <div id="ovText">正在加载 Python 引擎（首次约 15–40 秒，需要联网）…</div>
 </div>
 
 <div class="wrap">
   <header>
-    <h1>量化回测 · 沪深300动量策略</h1>
-    <p>浏览器本地运行（Pyodide），数据不离开你的手机 · 数据截至 2026-11-17</p>
+    <h1>量化回测 · 动量策略</h1>
+    <p>沪深300 / 标普500 / 恒生指数三个股票池 · 浏览器本地运行，数据不离开你的手机 · 数据截至 2026-11-17</p>
   </header>
 
   <div class="card">
     <h2>回测参数</h2>
     <div class="controls">
+      <div>
+        <label for="selPool">股票池</label>
+        <select id="selPool">
+          <option value="hs300" selected>沪深300（A股）</option>
+          <option value="spx">标普500（美股）</option>
+          <option value="hsi">恒生指数（港股）</option>
+        </select>
+      </div>
       <div>
         <label for="selTopn">持仓数量（按动量选前 N 只）</label>
         <select id="selTopn">
@@ -138,11 +146,11 @@
   <div class="card">
     <h2>说明与局限</h2>
     <ul class="notes" style="margin:0; padding-left:18px;">
-      <li>策略：沪深300成分股里，按「过去60日涨幅（跳过最近5日）」打分，选前 N 只等权持有，定期换仓。</li>
-      <li>成本口径：佣金万三 + 滑点千一 + 卖出印花税千一（可在上方关掉对比）。</li>
-      <li>默认参数（前50只 / 每月调仓 / 全部区间 / 计成本）的成绩单应为：夏普 0.47、年化收益 10.85%、最大回撤 −23.9%、年换手 7.88——对得上就是跑对了。</li>
-      <li>幸存者偏差：用今天的成分股名单回测 2023 年以来的历史，成绩偏乐观，只能当练习和对照，不能当实盘预期。</li>
-      <li>停牌日收益按 0 处理，价格为前复权口径。本页仅供学习，不构成投资建议。</li>
+      <li>策略：所选股票池里，按「过去60日涨幅（跳过最近5日）」打分，选前 N 只等权持有，定期换仓。三个市场同一套规则，方便横向对比。</li>
+      <li>成本口径：佣金万三 + 滑点千一 + 卖出印花税千一（可在上方关掉对比）。这是统一的简化口径，美股、港股的实际费率结构不同，数字只作量级参考。</li>
+      <li>对照基准：沪深300默认参数（前50只 / 每月调仓 / 全部区间 / 计成本）的成绩单应为：夏普 0.47、年化收益 10.85%、最大回撤 −23.9%、年换手 7.88——对得上就是跑对了。</li>
+      <li>幸存者偏差：三个池子都用今天的成分股名单回测 2023 年以来的历史，成绩偏乐观，只能当练习和对照，不能当实盘预期。</li>
+      <li>行情为公开接口的前复权日线；各市场交易日历不同，区间天数会有差异；停牌/停市日按缺失处理。本页仅供学习，不构成投资建议。</li>
     </ul>
   </div>
 </div>
@@ -151,11 +159,28 @@
 <script>
 const $ = id => document.getElementById(id);
 let pyodide = null, lastResult = null;
+const fetchedPools = new Set();
 
 function ov(t){ $('ovText').textContent = t; }
 function setStatus(t){ $('status').textContent = t; }
 const pct = (x, d=2) => (x === null || x === undefined || isNaN(x)) ? '—' : (x * 100).toFixed(d) + '%';
 const num = (x, d=2) => (x === null || x === undefined || isNaN(x)) ? '—' : Number(x).toFixed(d);
+
+async function fetchText(p){
+  const r = await fetch(p);
+  if(!r.ok) throw new Error('下载失败: ' + p);
+  return await r.text();
+}
+
+async function fetchPoolFiles(pool){
+  if (fetchedPools.has(pool)) return;
+  setStatus('正在下载该股票池数据（约 1–5 MB）…');
+  try{ pyodide.FS.mkdir('/data/' + pool); }catch(e){}
+  for (const f of ['returns_i.csv', 'factor_i.csv', 'names.csv']){
+    pyodide.FS.writeFile('/data/' + pool + '/' + f, await fetchText('data/' + pool + '/' + f));
+  }
+  fetchedPools.add(pool);
+}
 
 async function boot(){
   try{
@@ -163,18 +188,16 @@ async function boot(){
     pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/' });
     ov('正在加载数据计算库（numpy / pandas）…');
     await pyodide.loadPackage(['numpy', 'pandas']);
-    ov('正在下载回测框架与沪深300数据（约 5 MB）…');
-    const fetchText = async p => { const r = await fetch(p); if(!r.ok) throw new Error('下载失败: ' + p); return await r.text(); };
+    ov('正在下载回测框架与沪深300数据…');
     const fw = await fetchText('framework.py');
     const rn = await fetchText('runner.py');
     pyodide.FS.writeFile('/framework.py', fw);
     try{ pyodide.FS.mkdir('/data'); }catch(e){}
-    for (const f of ['returns_i.csv', 'factor_i.csv', 'names.csv']){
-      pyodide.FS.writeFile('/data/' + f, await fetchText('data/' + f));
-    }
-    ov('正在载入数据…');
     await pyodide.runPythonAsync("import os, sys\nos.chdir('/')\nif '/' not in sys.path: sys.path.insert(0, '/')");
+    await fetchPoolFiles('hs300');
+    ov('正在载入数据…');
     await pyodide.runPythonAsync(rn);
+    await pyodide.runPythonAsync("load_pool('hs300')");
     $('overlay').classList.add('hidden');
     $('btnRun').disabled = false;
     setStatus('就绪。正在自动运行一次默认参数回测…');
@@ -189,13 +212,17 @@ async function runBt(){
   if(!pyodide) return;
   const btn = $('btnRun');
   btn.disabled = true;
-  setStatus('正在回测…（手机上全量回测约需几十秒，请稍候）');
   await new Promise(r => setTimeout(r, 40));
   try{
+    const pool = $('selPool').value;
+    await fetchPoolFiles(pool);
+    setStatus('正在回测…（手机上全量回测约需几十秒，请稍候）');
+    await new Promise(r => setTimeout(r, 40));
+    await pyodide.runPythonAsync("load_pool('" + pool + "')");
     const topn = $('selTopn').value, freq = $('selFreq').value,
           years = $('selYears').value, cost = $('chkCost').checked ? 'True' : 'False';
     const t0 = performance.now();
-    const json = await pyodide.runPythonAsync(`run_bt(top_n=${topn}, freq='${freq}', years=${years}, with_cost=${cost})`);
+    const json = await pyodide.runPythonAsync(`run_bt(pool='${pool}', top_n=${topn}, freq='${freq}', years=${years}, with_cost=${cost})`);
     lastResult = JSON.parse(json);
     render(lastResult);
     setStatus('完成，用时 ' + ((performance.now() - t0) / 1000).toFixed(1) + ' 秒。改参数再点「运行回测」即可。');
@@ -232,8 +259,7 @@ function render(r){
   $('cardYearly').classList.remove('hidden');
   $('holdDate').textContent = '（' + r.hold_date + '，共 ' + r.holdings.length + ' 只）';
   $('holds').innerHTML = r.holdings.map(h => {
-    const code = h.symbol.replace(/^(sh|sz)/, '');
-    return '<div class="row"><span>' + h.name + '<span class="code">' + code + '</span></span>' +
+    return '<div class="row"><span>' + h.name + '<span class="code">' + h.code + '</span></span>' +
            '<span class="w">' + pct(h.w) + '</span></div>';
   }).join('');
   $('cardHolds').classList.remove('hidden');
