@@ -173,6 +173,7 @@ async function boot(){
       pyodide.FS.writeFile('/data/' + f, await fetchText('data/' + f));
     }
     ov('正在载入数据…');
+    await pyodide.runPythonAsync("import os, sys\nos.chdir('/')\nif '/' not in sys.path: sys.path.insert(0, '/')");
     await pyodide.runPythonAsync(rn);
     $('overlay').classList.add('hidden');
     $('btnRun').disabled = false;
