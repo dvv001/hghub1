@@ -868,7 +868,11 @@ if (typeof refreshAfterSquadChange === 'function') refreshAfterSquadChange();
 function libAgentName(agentId) {
 if (agentId === 'all') return '全部智能体';
 const ag = agents.find(a => a.id === agentId);
-return ag? ag.name: agentId;
+if (ag) return ag.name;
+try {
+if (Array.isArray(squads)) { for (const sq of squads) { const hit = (sq.agents || []).find(a => a && a.id === agentId); if (hit) return hit.name; } }
+} catch (e) {}
+return agentId;
 }
 function libAssignSummary(item) {
 const a = (item.agents && item.agents.length)? item.agents: ['all'];
