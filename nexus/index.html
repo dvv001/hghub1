@@ -60,6 +60,16 @@
           <button id="bannerConfigBtn" type="button" class="btn btn-amber btn-sm">去配置</button>
         </div>
 
+        <!-- Current Squad Summary (read-only mirror of the active squad; populated by the inline script at the end of body) -->
+        <div id="wsSquadCard" class="cyber-panel stack-sm ws-squad-card" style="display:none">
+          <div class="row-between">
+            <span class="ws-squad-label">当前编队</span>
+            <span id="wsSquadCount" class="ws-squad-count"></span>
+          </div>
+          <div id="wsSquadName" class="ws-squad-name truncate"></div>
+          <div id="wsSquadAvatars" class="ws-squad-avatars"></div>
+        </div>
+
         <!-- Mission Command Console -->
         <div class="cyber-panel stack">
           <div class="row-between">
@@ -78,8 +88,10 @@
               <option value="parallel_fork">🚀 极速并行分叉 (总控→并发→汇总)</option>
               <option value="fast">⏱️ 精简快速模式 (前3个核心节点)</option>
             </select>
+          </div>
+          <div class="row">
             <button id="abortMissionBtn" type="button" class="btn btn-danger hidden">⏹ 停止</button>
-            <button id="runMissionBtn" type="button" class="btn btn-primary">🚀 启动协同</button>
+            <button id="runMissionBtn" type="button" class="btn btn-primary btn-hero-run">🚀 启动协同</button>
           </div>
         </div>
 
@@ -451,5 +463,46 @@
   <script src="js/engine.js"></script>
   <script src="js/topology.js"></script>
   <script src="js/ui.js"></script>
+  <!-- ===== Workspace Squad Mirror (v22, read-only: renders the active squad summary card from localStorage; never writes) ===== -->
+  <script>
+  (function () {
+    var card = document.getElementById('wsSquadCard');
+    if (!card) return;
+    var lastKey = '';
+    function esc(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function render() {
+      try {
+        var squads = JSON.parse(localStorage.getItem('nexusai_squads') || '[]');
+        var activeId = localStorage.getItem('nexusai_active_squad') || '';
+        if (!Array.isArray(squads) || !squads.length) { card.style.display = 'none'; lastKey = ''; return; }
+        var sq = null;
+        for (var i = 0; i < squads.length; i++) { if (squads[i].id === activeId) { sq = squads[i]; break; } }
+        if (!sq) sq = squads[0];
+        var agents = Array.isArray(sq.agents) ? sq.agents : [];
+        var key = String(sq.id) + '|' + String(sq.name) + '|' + agents.length;
+        if (key === lastKey && card.style.display !== 'none') return;
+        lastKey = key;
+        document.getElementById('wsSquadName').textContent = sq.name || '未命名编队';
+        document.getElementById('wsSquadCount').textContent = agents.length + ' 个智能体';
+        document.getElementById('wsSquadAvatars').innerHTML = agents.slice(0, 8).map(function (ag) {
+          var col = /^#[0-9a-fA-F]{3,8}$/.test(ag.color || '') ? ag.color : '#00F0FF';
+          return '<span class="ws-avatar" style="background:' + col + '22;border:1px solid ' + col + '66" title="' + esc(ag.name || '') + '">' + esc(ag.icon || '🤖') + '</span>';
+        }).join('');
+        card.style.display = '';
+      } catch (e) { card.style.display = 'none'; }
+    }
+    card.addEventListener('click', function () {
+      var b = document.querySelector('[data-nav="agents"]');
+      if (b) b.click();
+    });
+    render();
+    document.addEventListener('visibilitychange', render);
+    setInterval(render, 2000);
+  })();
+  </script>
 </body>
 </html>
