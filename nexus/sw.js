@@ -1,48 +1,81 @@
-// NexusAI PWA Service Worker — app shell cache (stale-while-revalidate for static assets).
-// API calls (POST) and dynamic GitHub API lookups are never served stale from cache.
-const CACHE = 'nexusai-v19';
-const SHELL = [
+// NexusAI v20 PWA Service Worker — Layered App Shell + GitHub Network-First Cache
+const CACHE_NAME = 'nexusai-v20';
+const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icon.svg'
+  './icon.svg',
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
+  './css/app.css',
+  './js/store.js',
+  './js/audio.js',
+  './js/transport.js',
+  './js/engine.js',
+  './js/topology.js',
+  './js/ui.js'
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET') return;
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
   let url;
-  try { url = new URL(e.request.url); } catch (_) { return; }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
-  if (url.hostname === 'api.github.com' || url.hostname === 'raw.githubusercontent.com') {
-    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+  try {
+    url = new URL(event.request.url);
+  } catch (_) {
     return;
   }
-  e.respondWith(
-    caches.match(e.request).then((hit) => {
-      const net = fetch(e.request)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+  // 1. GitHub dynamic skill import: Network-first with cache write & offline fallback
+  if (url.hostname === 'api.github.com' || url.hostname === 'raw.githubusercontent.com') {
+    event.respondWith(
+      fetch(event.request)
         .then((res) => {
-          if (res && (res.status === 200 || res.type === 'opaque')) {
+          if (res && res.status === 200) {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
           }
           return res;
         })
-        .catch(() => hit);
-      return hit || net;
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 2. Never intercept cross-origin API GET requests (avoid caching stale remote data)
+  if (url.origin !== self.location.origin) return;
+
+  // 3. Same-origin app shell: Stale-while-revalidate for instant iOS launch
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      const networkFetch = fetch(event.request)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
+          }
+          return res;
+        })
+        .catch(() => cached);
+      return cached || networkFetch;
     })
   );
 });

@@ -1,3202 +1,455 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="dark">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>NexusAI — iOS 多智能体协同中枢</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>NexusAI — 量子多智能体协同中枢</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#060911">
+  <meta name="theme-color" content="#050314">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NexusAI">
-  <link rel="apple-touch-icon" href="https://hghub-proxy.liguohao770801114.workers.dev/nexus-icon.png">
-  <link rel="icon" type="image/png" sizes="180x180" href="https://hghub-proxy.liguohao770801114.workers.dev/nexus-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-
-<script src="https://cdn.tailwindcss.com/3.4.17"></script>
-<script>
-if (typeof tailwind !== 'undefined') {
-tailwind.config = {
-darkMode: 'class',
-theme: {
-extend: {
-fontFamily: {
-sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'PingFang SC', 'system-ui', 'sans-serif'],
-mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
-},
-colors: {
-slate: {
-850: '#111827',
-900: '#0B0F19',
-950: '#060911',
-}
-}
-}
-}
-};
-}
-</script>
-<style>
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body {
-background-color: #060911;
-color: #F1F5F9;
-font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', system-ui, sans-serif;
-width: 100%;
-max-width: 100vw;
-overflow-x: hidden;
-margin: 0;
-padding: 0;
--webkit-text-size-adjust: 100%;
-text-size-adjust: 100%;
-}
-.safe-wrap {
-overflow-wrap: anywhere;
-word-break: break-word;
-}
-.hidden { display: none !important; }
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #0B0F19; }
-::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
-.glass-panel {
-background: rgba(15, 23, 42, 0.84);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border: 1px solid rgba(51, 65, 85, 0.6);
-}
-.ios-tabbar {
-background: rgba(9, 13, 22, 0.94);
-backdrop-filter: blur(20px);
--webkit-backdrop-filter: blur(20px);
-border-top: 1px solid rgba(51, 65, 85, 0.65);
-}
-.dynamic-island {
-background: #000000;
-border-radius: 999px;
-border: 1px solid rgba(71, 85, 105, 0.65);
-box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
-transition: all 0.25s ease;
-}
-.dynamic-island.active-api {
-border-color: rgba(6, 182, 212, 0.85);
-box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
-}
-@keyframes pulse-slow {
-0%, 100% { opacity: 1; }
-50% { opacity: 0.4; }
-}
-.animate-pulse-slow { animation: pulse-slow 1.8s infinite ease-in-out; }
-</style>
+  <link rel="stylesheet" href="css/app.css">
 </head>
-<body class="w-full min-h-screen flex flex-col items-center bg-slate-950 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
-<div id="appRootShell" class="w-full max-w-[480px] min-w-0 min-h-screen flex flex-col bg-[#060911] sm:border-x sm:border-slate-800/80 relative overflow-x-hidden mx-auto">
-<header id="mainAppHeader" class="w-full min-w-0 sticky top-0 z-30 bg-[#060911]/90 backdrop-blur-xl border-b border-slate-800/80 px-3.5 pt-2.5 pb-2.5">
-<div class="flex items-center justify-between text-xs font-semibold text-slate-300 mb-2">
-<span id="iosClock" class="font-mono text-[11px]">09:41</span>
-<button id="dynamicIslandBtn" type="button" class="dynamic-island px-3.5 py-1 flex items-center gap-2">
-<span id="islandDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-<span id="islandText" class="text-[11px] font-medium text-slate-200 truncate max-w-[175px]">待配置模型 API</span>
-</button>
-<span id="headerTokens" class="font-mono text-[11px] text-cyan-400">0 tok</span>
-</div>
-<div class="flex items-center justify-between gap-2">
-<div class="flex items-center gap-2.5 min-w-0">
-<div class="w-8 h-8 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-cyan-500/20 shrink-0">
-<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-</svg>
-</div>
-<div class="min-w-0">
-<div class="flex items-center gap-1.5">
-<h1 class="text-sm font-bold text-white truncate">NexusAI 协同中枢</h1>
-<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shrink-0">Claw全自动内核</span>
-</div>
-<p id="subHeaderStatus" class="text-[11px] text-slate-400 truncate">全自动三阶压缩 · 智能路由 · 零感自愈</p>
-</div>
-</div>
-<div class="flex items-center gap-1.5 shrink-0">
-<button id="sfxToggleBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/35 transition">
-🔊 音效
-</button>
-<button id="topConfigApiBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">
-⚙️ 配API
-</button>
-</div>
-</div>
-</header>
-<main class="w-full min-w-0 flex-1 px-3.5 py-3 space-y-3 pb-24 overflow-x-hidden">
-<section id="tabViewWorkspace" class="w-full min-w-0 space-y-3">
-<div id="apiAlertBanner" class="glass-panel rounded-2xl p-3 border border-amber-500/40 bg-amber-500/10 flex items-center justify-between gap-2 min-w-0">
-<div class="text-xs text-amber-200 leading-relaxed min-w-0 safe-wrap">
-<strong class="text-amber-300">尚未填写 API Key：</strong>所有任务均已默认内置 Claw-Code 全自动优化，请先填入模型 API Key。
-</div>
-<button id="bannerConfigBtn" type="button" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shrink-0">
-去配置
-</button>
-</div>
-<div class="glass-panel rounded-2xl p-3.5 space-y-2.5 min-w-0 overflow-hidden">
-<div class="flex items-center justify-between gap-2 min-w-0">
-<span class="text-xs font-bold text-slate-200 truncate min-w-0 flex-1">🎯 派发真实任务 (后台自动启用 Claw-Code 引擎)</span>
-<select id="sampleTaskSelect" aria-label="预设真实任务模板" class="w-[132px] sm:w-[155px] shrink-0 truncate bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500">
-<option value="">💡 选填测试任务...</option>
-<option value="设计一套高并发秒杀防超卖系统架构，编写核心 Redis Lua 扣减库存代码，并输出安全边界审计清单">⚡ 高并发秒杀架构+代码+审计</option>
-<option value="设计一款 iOS 个人 AI 语音笔记 App 的产品架构、核心数据表结构、SwiftUI 录音转写关键代码及商业化方案">📱 iOS AI 语音笔记 App 全案</option>
-<option value="构建多因子量化选股回测框架，推导夏普比率与最大回撤计算公式，并给出核心 Python 向量化回测代码">📊 量化选股策略与 Python 代码</option>
-</select>
-</div>
-<textarea id="missionTextarea" rows="3" placeholder="直接输入您的任务需求，系统将在后台自动完成工具路由、Trident 上下文压缩、防漂移注入与异常自愈..." class="w-full bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none leading-relaxed safe-wrap"></textarea>
-<div class="flex items-center justify-between gap-2 pt-0.5 min-w-0">
-<select id="execModeSelect" aria-label="执行链路模式" class="flex-1 min-w-0 truncate bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-2 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500">
-<option value="auto_claw">⚡ 全自动 Claw 协同 (自动压缩+防漂移+自愈)</option>
-<option value="parallel_fork">🚀 极速并行分叉 (总控拆解→多节点并发→汇总)</option>
-<option value="fast">⏱️ 精简快速模式 (前3个核心节点)</option>
-</select>
-<div class="flex items-center gap-1.5 shrink-0 justify-end">
-<button id="abortMissionBtn" type="button" class="hidden whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white transition">
-⏹ 停止执行
-</button>
-<button id="runMissionBtn" type="button" class="whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-md shadow-cyan-500/20 transition">
-🚀 启动真实协同
-</button>
-</div>
-</div>
-</div>
-<div class="grid grid-cols-3 gap-2 min-w-0">
-<div class="glass-panel rounded-xl p-2.5 text-center min-w-0 overflow-hidden">
-<div class="text-[10px] text-slate-400 truncate">已完成节点</div>
-<div class="text-xs font-mono font-bold text-cyan-400 mt-0.5 whitespace-nowrap"><span id="kpiDoneAgents">0</span> / <span id="kpiEnabledAgents">5</span></div>
-</div>
-<div class="glass-panel rounded-xl p-2.5 text-center min-w-0 overflow-hidden">
-<div class="text-[10px] text-slate-400 truncate">消耗 / 自动省流</div>
-<div class="text-xs font-mono font-bold text-indigo-400 mt-0.5 truncate"><span id="kpiRealTokens">0</span> <span id="kpiSavedTokens" class="text-[10px] text-emerald-400 whitespace-nowrap">(省0)</span></div>
-</div>
-<div class="glass-panel rounded-xl p-2.5 text-center min-w-0 overflow-hidden">
-<div class="text-[10px] text-slate-400 truncate">累计接口耗时</div>
-<div id="kpiRealLatency" class="text-xs font-mono font-bold text-emerald-400 mt-0.5 whitespace-nowrap">0.0s</div>
-</div>
-</div>
-<div class="space-y-2 min-w-0">
-<div class="flex items-center justify-between gap-2 px-0.5 min-w-0">
-<h2 class="text-xs font-bold text-slate-300 truncate min-w-0 flex-1">⚡ 智能体实时执行流水线 (点击卡片查看或追问)</h2>
-<button id="showReportModalBtn" type="button" class="whitespace-nowrap shrink-0 text-[11px] font-semibold text-cyan-400 hover:text-cyan-300">
-📑 完整报告 & 导出
-</button>
-</div>
-<div id="pipelineAgentCards" class="space-y-2 min-w-0"></div>
-</div>
-<div class="glass-panel rounded-2xl p-3 min-w-0 overflow-hidden">
-<div class="flex items-center justify-between gap-2 mb-2 min-w-0">
-<span class="text-xs font-bold text-slate-300 flex items-center gap-1.5 truncate min-w-0">
-<span class="w-2 h-2 rounded-full bg-indigo-400 shrink-0"></span>
-<span class="truncate">Claw-Code 自动内核与 API 调度日志</span>
-</span>
-<button id="clearLogBtn" type="button" class="whitespace-nowrap shrink-0 text-[11px] text-slate-400 hover:text-slate-200">清空</button>
-</div>
-<div id="busLogBox" class="space-y-1.5 max-h-40 overflow-y-auto overflow-x-hidden font-mono text-[11px] text-slate-300 safe-wrap">
-<div class="text-slate-500 text-[11px]">全自动内核待命中。派发任意任务后将自动执行路由、Trident 压缩与 API 推理...</div>
-</div>
-</div>
-</section>
-<section id="tabViewTopology" style="margin-top:0 !important;" class="fixed top-0 left-0 right-0 bottom-[48px] z-40 bg-[#04060D] flex flex-col p-1 sm:p-2 select-none overflow-hidden">
-<span id="topoStateBadge" class="hidden">STANDBY</span>
-<div id="stageCanvasWrap" class="relative w-full h-full flex-1 min-h-0 rounded-lg overflow-hidden bg-[#04060D]">
-<canvas id="stageCanvas" class="w-full h-full block cursor-pointer"></canvas>
-<div class="absolute bottom-1.5 right-2 z-20 flex items-center gap-1.5">
-<button id="spawnSlipBurstBtn" type="button" class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-900/85 hover:bg-slate-800 text-pink-300 border border-pink-500/40 backdrop-blur-sm transition">+ 飘字条</button>
-<button id="toggleFullImmersionBtn" type="button" class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-900/85 hover:bg-slate-800 text-cyan-300 border border-cyan-500/35 backdrop-blur-sm transition">⛶ 全屏</button>
-</div>
-</div>
-</section>
-<section id="tabViewAgents" class="hidden space-y-3">
-<div class="glass-panel rounded-2xl p-3 space-y-2">
-<div class="flex items-center justify-between">
-<div>
-<h2 class="text-xs font-bold text-white">🤖 智能体编队与角色配置</h2>
-<p class="text-[10px] text-slate-400">编队各自独立保存：可切换预设编队，也可新建自己的编队，成员与提示词互不混杂</p>
-</div>
-<button id="openNewAgentBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition">
-＋ 新增 Agent
-</button>
-</div>
-<div id="squadBar" class="flex flex-wrap gap-1.5 pt-1"></div>
-<div class="flex flex-wrap gap-1.5">
-<button id="newSquadBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition">＋ 新建编队</button>
-<button id="dupSquadBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-slate-200 border border-slate-700">复制当前编队</button>
-<button id="renameSquadBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-slate-200 border border-slate-700">重命名</button>
-<button id="delSquadBtn" type="button" class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-rose-300 border border-rose-500/40">删除编队</button>
-</div>
-<p class="text-[10px] text-slate-500">每个编队独立保存成员与提示词：切换编队不会丢失任何东西，新增 Agent 只进当前编队。</p>
-</div>
-<div id="agentConfigContainer" class="space-y-2.5"></div>
-</section>
-<section id="tabViewSettings" class="hidden space-y-3">
-<div class="glass-panel rounded-2xl p-4 space-y-3">
-<div>
-<h2 class="text-sm font-bold text-white">⚙️ 模型 API 引擎设置</h2>
-<p class="text-[11px] text-slate-400 mt-0.5">内置 Claw-Code 跨模型自适应层（自动兼容推理模型、Claude 原生接口与 OpenAI 标准接口）</p>
-</div>
-<div>
-<label class="block text-[11px] font-semibold text-slate-300 mb-1.5">一键选择服务商预设：</label>
-<div class="grid grid-cols-2 gap-1.5">
-<button type="button" data-preset="deepseek" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-left">
-🚀 DeepSeek 官方
-</button>
-<button type="button" data-preset="deepseek_r1" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
-🧠 DeepSeek R1 (推理)
-</button>
-<button type="button" data-preset="claude" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
-🟣 Anthropic Claude
-</button>
-<button type="button" data-preset="siliconflow" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
-⚡ 硅基流动 SiliconFlow
-</button>
-<button type="button" data-preset="qwen" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
-☁️ 阿里百炼 (通义千问)
-</button>
-<button type="button" data-preset="openai" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
-🌐 OpenAI 官方 / 中转
-</button>
-<button type="button" data-preset="kimi" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
-🌙 月之暗面 Kimi
-</button>
-<button type="button" data-preset="gemini" class="preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left">
-✨ Google Gemini
-</button>
-</div>
-</div>
-<div>
-<label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgBaseUrl">接口地址 (Endpoint URL)</label>
-<input id="cfgBaseUrl" type="url" value="https://api.deepseek.com/v1/chat/completions" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-</div>
-<div>
-<label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgApiKey">API Key (必填)</label>
-<input id="cfgApiKey" type="password" placeholder="sk-..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-</div>
-<div>
-<label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgCfAccountId">Cloudflare Account ID（可选 · Kitesurf 联网抓取）</label>
-<input id="cfgCfAccountId" type="text" placeholder="Cloudflare 账号 ID" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-</div>
-<div>
-<label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgCfToken">Cloudflare API Token（Browser Rendering 权限）</label>
-<input id="cfgCfToken" type="password" placeholder="只存本机浏览器，勿外传" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-</div>
-<div class="grid grid-cols-2 gap-2.5">
-<div>
-<label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgModel">模型名称 (Model)</label>
-<input id="cfgModel" type="text" value="deepseek-chat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-</div>
-<div>
-<label class="block text-[11px] font-semibold text-slate-300 mb-1" for="cfgTemp">温度 (Temperature)</label>
-<input id="cfgTemp" type="number" step="0.05" min="0" max="1.5" value="0.3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-</div>
-</div>
-<div class="pt-1">
-<label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-<input id="cfgStream" type="checkbox" checked class="rounded border-slate-700 text-cyan-500">
-<span>启用 SSE 实时流式输出 (边思考边实时显示内容)</span>
-</label>
-</div>
-<div class="flex items-center gap-2 pt-2">
-<button id="saveCfgBtn" type="button" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition">
-💾 保存配置
-</button>
-<button id="testCfgBtn" type="button" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition">
-🔌 测试 API 连通性
-</button>
-</div>
-<div id="testResultBanner" class="hidden rounded-xl p-3 text-xs font-mono leading-relaxed border safe-wrap overflow-x-hidden"></div>
-</div>
-</section>
-<section id="tabViewLibrary" class="hidden space-y-3">
-<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
-<div class="flex items-center justify-between">
-<h3 class="text-sm font-bold text-white">📚 共享扩展库</h3>
-<span id="libCounts" class="text-[11px] text-slate-400"></span>
-</div>
-<p class="text-[11px] text-slate-400 leading-relaxed">技能、MCP 服务器与指令维护一份，按智能体分配、全线生效。平时只把名录注入提示词（省 token），智能体用到时才加载全文或真正调用工具。分配按当前编队的位置（总控/调研/研发/审计/汇总）生效，切换编队后同位置自动沿用。</p>
-<div class="flex gap-2">
-<button id="libExportBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">⬆️ 导出配置</button>
-<button id="libImportBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">⬇️ 导入配置</button>
-</div>
-<div id="libIoBox" class="hidden space-y-2">
-<textarea id="libIoText" rows="5" placeholder="导出时配置 JSON 会出现在这里；导入时把 JSON 粘贴到这里" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-100 font-mono focus:outline-none focus:border-cyan-500"></textarea>
-<div class="flex gap-2">
-<button id="libIoDoImportBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">执行导入</button>
-<button id="libIoCopyBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition">复制文本</button>
-</div>
-</div>
-</div>
+<body>
+  <div id="appRootShell" class="app-shell">
+    <!-- ===== Top HUD Header ===== -->
+    <header id="mainAppHeader" class="app-header">
+      <div class="hud-status-row">
+        <span id="iosClock" class="hud-clock">09:41</span>
+        <button id="dynamicIslandBtn" type="button" class="dynamic-island" aria-label="模型 API 状态">
+          <span id="islandDot" class="island-dot warn"></span>
+          <span id="islandText" class="island-text">待配置模型 API</span>
+        </button>
+        <span id="headerTokens" class="hud-tokens">0 tok</span>
+      </div>
+      <div class="hud-brand-row">
+        <div class="brand-group">
+          <div class="brand-emblem" aria-hidden="true">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>
+            </svg>
+          </div>
+          <div class="brand-meta">
+            <div class="brand-title-row">
+              <h1 class="brand-title truncate">NexusAI 协同中枢</h1>
+              <span class="kernel-chip">Claw v20</span>
+            </div>
+            <p id="subHeaderStatus" class="brand-sub truncate">全自动三阶压缩 · 智能路由 · 零感自愈</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="sfxToggleBtn" type="button" class="btn btn-ghost btn-sm">🔊 音效</button>
+          <button id="topConfigApiBtn" type="button" class="btn btn-muted btn-sm">⚙️ API</button>
+        </div>
+      </div>
+    </header>
 
-<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
-<h3 class="text-sm font-bold text-white">✨ 技能（Skills）</h3>
-<div id="libSkillList" class="space-y-2"></div>
-<div class="space-y-2 border-t border-slate-800 pt-3">
-<input id="libSkillName" type="text" placeholder="技能名（智能体用 [[SKILL:技能名]] 加载）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
-<input id="libSkillDesc" type="text" placeholder="一句话描述（进名录，帮智能体判断何时用）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
-<textarea id="libSkillBody" rows="6" placeholder="技能正文：规程、清单、模板等。也可以把整份 SKILL.md 粘到这里，下面的「从粘贴导入」会自动拆出名字、描述和正文。" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"></textarea>
-<div>
-<p class="text-[11px] font-semibold text-slate-300 mb-1">分配给</p>
-<div id="libSkillAgents" class="flex flex-wrap gap-2"></div>
-</div>
-<label class="flex items-center gap-2 text-[11px] text-slate-300"><input id="libSkillForce" type="checkbox" class="accent-cyan-500"> 必加载：全文直接注入被分配的智能体，不等它主动调用（适合必须照章执行的规程）</label>
-<input id="libSkillEditId" type="hidden">
-<div class="flex gap-2">
-<button id="libSkillSaveBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">💾 保存技能</button>
-<button id="libSkillPasteBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition">📋 从粘贴的 SKILL.md 导入</button>
-<button id="libSkillCancelBtn" type="button" class="hidden py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition">取消编辑</button>
-</div>
-<div class="flex gap-2">
-<input id="libSkillImportUrl" type="text" placeholder="单个 SKILL.md 的 raw 链接" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-<button id="libSkillImportBtn" type="button" class="py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 transition">导入</button>
-</div>
-<div class="flex gap-2">
-<input id="libRepoUrl" type="text" placeholder="GitHub 仓库地址（批量导入仓库内全部 SKILL.md）" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-<button id="libRepoImportBtn" type="button" class="py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 transition">批量导入</button>
-</div>
-<p id="libSkillMsg" class="text-[11px] text-slate-400"></p>
-</div>
-</div>
+    <!-- ===== Main Workspace Views ===== -->
+    <main class="app-main">
+      <!-- Tab 1: 协同工作台 -->
+      <section id="tabViewWorkspace" class="tab-section hidden">
+        <div id="apiAlertBanner" class="alert-banner">
+          <div class="alert-text safe-wrap">
+            <strong>尚未填写 API Key：</strong>已默认内置 Claw-Code 全自动引擎，请先配置模型 API Key。
+          </div>
+          <button id="bannerConfigBtn" type="button" class="btn btn-amber btn-sm">去配置</button>
+        </div>
 
-<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
-<h3 class="text-sm font-bold text-white">🔌 MCP 服务器</h3>
-<div id="libMcpList" class="space-y-2"></div>
-<div class="space-y-2 border-t border-slate-800 pt-3">
-<input id="libMcpName" type="text" placeholder="服务器名（智能体用 [[MCP:服务器名:工具名:{参数}]] 调用）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
-<input id="libMcpUrl" type="text" placeholder="服务器地址（https://…，Streamable HTTP 类 MCP）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-<input id="libMcpToken" type="password" placeholder="访问令牌（可选，只存本机浏览器）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
-<div>
-<p class="text-[11px] font-semibold text-slate-300 mb-1">分配给</p>
-<div id="libMcpAgents" class="flex flex-wrap gap-2"></div>
-</div>
-<input id="libMcpEditId" type="hidden">
-<div class="flex gap-2">
-<button id="libMcpSaveBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">💾 保存服务器</button>
-<button id="libMcpTestBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition">🔌 测试连接</button>
-<button id="libMcpCancelBtn" type="button" class="hidden py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition">取消编辑</button>
-</div>
-<p class="text-[11px] text-slate-500 leading-relaxed">调用经 hghub-proxy 的 /mcp 中转转发；需先部署新版 Worker（与 /browse 同一个文件）。电脑本地跑的 stdio 型 MCP 网页版接不了。</p>
-<p id="libMcpMsg" class="text-[11px] text-slate-400"></p>
-</div>
-</div>
+        <!-- Mission Command Console -->
+        <div class="cyber-panel stack">
+          <div class="row-between">
+            <h2 class="panel-title truncate flex-1">🎯 派发真实任务</h2>
+            <select id="sampleTaskSelect" aria-label="预设真实任务模板" class="field-select" style="width: 148px; flex-shrink: 0;">
+              <option value="">💡 选填测试任务...</option>
+              <option value="设计一套高并发秒杀防超卖系统架构，编写核心 Redis Lua 扣减库存代码，并输出安全边界审计清单">⚡ 高并发秒杀架构+代码+审计</option>
+              <option value="设计一款 iOS 个人 AI 语音笔记 App 的产品架构、核心数据表结构、SwiftUI 录音转写关键代码及商业化方案">📱 iOS AI 语音笔记 App 全案</option>
+              <option value="构建多因子量化选股回测框架，推导夏普比率与最大回撤计算公式，并给出核心 Python 向量化回测代码">📊 量化选股策略与 Python 代码</option>
+            </select>
+          </div>
+          <textarea id="missionTextarea" rows="3" class="field-textarea no-resize safe-wrap" placeholder="直接输入任务需求，后台自动完成工具路由、Trident 压缩、防漂移注入与异常自愈..."></textarea>
+          <div class="row">
+            <select id="execModeSelect" aria-label="执行链路模式" class="field-select flex-1">
+              <option value="auto_claw">⚡ 全自动 Claw 协同 (压缩+防漂移+自愈)</option>
+              <option value="parallel_fork">🚀 极速并行分叉 (总控→并发→汇总)</option>
+              <option value="fast">⏱️ 精简快速模式 (前3个核心节点)</option>
+            </select>
+            <button id="abortMissionBtn" type="button" class="btn btn-danger hidden">⏹ 停止</button>
+            <button id="runMissionBtn" type="button" class="btn btn-primary">🚀 启动协同</button>
+          </div>
+        </div>
 
-<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
-<h3 class="text-sm font-bold text-white">📜 指令（Instructions）</h3>
-<div id="libInstList" class="space-y-2"></div>
-<div class="space-y-2 border-t border-slate-800 pt-3">
-<input id="libInstName" type="text" placeholder="指令名（如：团队代码风格）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
-<textarea id="libInstText" rows="4" placeholder="指令正文：会原样注入被分配智能体的上下文（如：所有代码必须带中文注释）" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"></textarea>
-<div>
-<p class="text-[11px] font-semibold text-slate-300 mb-1">分配给</p>
-<div id="libInstAgents" class="flex flex-wrap gap-2"></div>
-</div>
-<input id="libInstEditId" type="hidden">
-<div class="flex gap-2">
-<button id="libInstSaveBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">💾 保存指令</button>
-<button id="libInstCancelBtn" type="button" class="hidden py-2 px-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition">取消编辑</button>
-</div>
-</div>
-</div>
-</section>
-</main>
-<nav id="bottomNavBar" class="ios-tabbar fixed bottom-0 left-0 right-0 h-[48px] z-50 max-w-[1120px] mx-auto px-2 py-1 flex items-center justify-around">
-<button type="button" data-nav="workspace" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-cyan-400">
-<span class="text-base leading-none">⚡</span>
-<span class="text-[10px] font-semibold mt-1">协同工作台</span>
-</button>
-<button type="button" data-nav="topology" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
-<span class="text-base leading-none">🛸</span>
-<span class="text-[10px] font-semibold mt-1">全息拓扑</span>
-</button>
-<button type="button" data-nav="agents" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
-<span class="text-base leading-none">🤖</span>
-<span class="text-[10px] font-semibold mt-1">智能体配置</span>
-</button>
-<button type="button" data-nav="settings" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
-<span class="text-base leading-none">⚙️</span>
-<span class="text-[10px] font-semibold mt-1">API设置</span>
-</button>
-<button type="button" data-nav="library" class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200">
-<span class="text-base leading-none">📚</span>
-<span class="text-[10px] font-semibold mt-1">扩展库</span>
-</button>
-</nav>
-</div>
-<div id="agentInspectorModal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-sm p-0 sm:p-4">
-<div class="glass-panel w-full max-w-[460px] rounded-t-3xl sm:rounded-3xl p-4 border border-slate-700 max-h-[85vh] flex flex-col">
-<div class="flex items-center justify-between pb-3 border-b border-slate-800">
-<div class="flex items-center gap-2">
-<span id="modalAgIcon" class="text-xl">🧠</span>
-<div>
-<h3 id="modalAgName" class="text-sm font-bold text-white">Nexus-01 架构总控</h3>
-<p id="modalAgRole" class="text-[11px] text-slate-400">全局任务拆解与技术纲要</p>
-</div>
-</div>
-<div class="flex items-center gap-1.5">
-<button id="copyAgOutBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] bg-slate-800 text-cyan-300">复制产出</button>
-<button id="closeAgModalBtn" type="button" class="px-2.5 py-1 rounded-lg text-xs bg-slate-800 text-slate-300">✕</button>
-</div>
-</div>
-<div id="modalAgOutput" class="flex-1 overflow-y-auto overflow-x-hidden my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap safe-wrap leading-relaxed min-h-[200px]"></div>
-<form id="directChatForm" class="flex items-center gap-2 pt-1">
-<input id="directChatInput" type="text" required placeholder="向该 Agent 追问或发送单独指令 (真实调用API)..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
-<button type="submit" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 shrink-0">
-发送
-</button>
-</form>
-</div>
-</div>
-<div id="reportModal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-sm p-0 sm:p-4">
-<div class="glass-panel w-full max-w-[460px] rounded-t-3xl sm:rounded-3xl p-4 border border-slate-700 max-h-[85vh] flex flex-col">
-<div class="flex items-center justify-between pb-3 border-b border-slate-800">
-<h3 class="text-sm font-bold text-white">📑 多智能体真实交付汇总报告</h3>
-<div class="flex items-center gap-1.5">
-<button id="copyReportBtn" type="button" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-cyan-300">复制全文</button>
-<button id="downloadReportBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] bg-cyan-500 text-slate-950 font-bold">下载 .md</button>
-<button id="downloadJsonReportBtn" type="button" class="px-2 py-1 rounded-lg text-[11px] bg-indigo-500/25 text-indigo-300 border border-indigo-500/40 font-semibold">导出 .json</button>
-<button id="closeReportModalBtn" type="button" class="px-2 py-1 rounded-lg text-xs bg-slate-800 text-slate-300">✕</button>
-</div>
-</div>
-<div id="reportModalContent" class="flex-1 overflow-y-auto overflow-x-hidden my-3 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap safe-wrap leading-relaxed min-h-[220px]"></div>
-</div>
-</div>
-<div id="squadModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-<div class="glass-panel w-full max-w-[400px] rounded-3xl p-4 border border-slate-700 space-y-3">
-<h3 id="squadModalTitle" class="text-sm font-bold text-white"></h3>
-<p id="squadModalText" class="text-[11px] text-slate-400 hidden"></p>
-<input id="squadModalInput" type="text" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
-<div class="flex gap-2">
-<button id="squadModalCancel" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition">取消</button>
-<button id="squadModalOk" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">确定</button>
-</div>
-</div>
-</div>
-<div id="newAgentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-<div class="glass-panel w-full max-w-[400px] rounded-3xl p-4 border border-slate-700 space-y-3">
-<div class="flex items-center justify-between">
-<h3 class="text-sm font-bold text-white">＋ 新增专职智能体节点</h3>
-<button id="closeNewAgentModalBtn" type="button" class="text-slate-400 hover:text-white text-xs px-2 py-1">✕</button>
-</div>
-<form id="newAgentForm" class="space-y-2.5">
-<div>
-<label class="block text-[11px] text-slate-300 mb-1" for="addAgName">智能体名称</label>
-<input id="addAgName" type="text" required placeholder="例如：Product-06 产品专家" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-</div>
-<div>
-<label class="block text-[11px] text-slate-300 mb-1" for="addAgRole">职责描述</label>
-<input id="addAgRole" type="text" required placeholder="例如：交互体验与商业化方案设计" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-</div>
-<div>
-<label class="block text-[11px] text-slate-300 mb-1" for="addAgPrompt">System Prompt (系统提示词)</label>
-<textarea id="addAgPrompt" rows="3" required placeholder="你是资深产品总监，请基于上游结论输出用户体验流程与商业化闭环方案..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
-</div>
-<div class="flex justify-end gap-2 pt-1">
-<button id="cancelNewAgentBtn" type="button" class="px-3.5 py-1.5 rounded-xl text-xs bg-slate-800 text-slate-300">取消</button>
-<button type="submit" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950">添加</button>
-</div>
-</form>
-</div>
-</div>
-<div id="toastBanner" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-2 bg-slate-900/95 border border-cyan-500/50 text-slate-100 px-4 py-2 rounded-full shadow-xl text-xs">
-<span class="text-cyan-400">✔</span>
-<span id="toastText">已保存</span>
-</div>
-<script>
-/* ===== 传输层 TRANSPORT：模型 API 适配（OpenAI 兼容 / Anthropic 原生，供应商预设） ===== */
-const PROVIDER_PRESETS = {
-deepseek: { name: 'DeepSeek 官方', baseUrl: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat' },
-deepseek_r1: { name: 'DeepSeek R1 (推理)', baseUrl: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-reasoner' },
-claude: { name: 'Anthropic Claude', baseUrl: 'https://api.anthropic.com/v1/messages', model: 'claude-3-7-sonnet-latest' },
-siliconflow: { name: '硅基流动 SiliconFlow', baseUrl: 'https://api.siliconflow.cn/v1/chat/completions', model: 'deepseek-ai/DeepSeek-V3' },
-qwen: { name: '阿里百炼 (通义千问)', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-plus' },
-openai: { name: 'OpenAI 官方', baseUrl: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini' },
-kimi: { name: '月之暗面 Kimi', baseUrl: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-32k' },
-gemini: { name: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.5-flash' }
-};
-const apiSettings = {
-baseUrl: 'https://api.deepseek.com/v1/chat/completions',
-apiKey: '',
-model: 'deepseek-chat',
-temperature: 0.3,
-stream: true,
-compactMaxChars: 1600,
-cfAccountId: '',
-cfToken: ''
-};
-try {
-const saved = localStorage.getItem('nexusai_ios_real_cfg');
-if (saved) {
-const parsed = JSON.parse(saved);
-if (parsed.baseUrl) apiSettings.baseUrl = parsed.baseUrl;
-if (parsed.apiKey) apiSettings.apiKey = parsed.apiKey;
-if (parsed.model) apiSettings.model = parsed.model;
-if (typeof parsed.temperature === 'number') apiSettings.temperature = parsed.temperature;
-if (typeof parsed.stream === 'boolean') apiSettings.stream = parsed.stream;
-if (parsed.cfAccountId) apiSettings.cfAccountId = parsed.cfAccountId;
-if (parsed.cfToken) apiSettings.cfToken = parsed.cfToken;
-}
-} catch (e) {}
-function getCanonicalModelName(model) {
-const lowered = String(model || '').toLowerCase().trim();
-const parts = lowered.split('/');
-return parts[parts.length - 1] || lowered;
-}
-function isReasoningModel(model) {
-const c = getCanonicalModelName(model);
-return (
-c === 'o1' || c.startsWith('o1-') || c === 'o3' || c.startsWith('o3-') || c === 'o4' || c.startsWith('o4-') ||
-c === 'grok-3-mini' || c.startsWith('qwq-') || c.startsWith('qwen-qwq-') ||
-(c.startsWith('qwen3-') && c.includes('-thinking')) ||
-c.includes('deepseek-reasoner') || c.includes('deepseek-r1')
-);
-}
-function usesMaxCompletionTokens(model) {
-const c = getCanonicalModelName(model);
-return c.startsWith('gpt-5') || c === 'o1' || c.startsWith('o1-') || c === 'o3' || c.startsWith('o3-') || c === 'o4' || c.startsWith('o4-');
-}
-function isAnthropicNativeEndpoint(url) {
-return String(url || '').toLowerCase().includes('/v1/messages');
-}
-const COMPACT_CONTINUATION_PREAMBLE =
-'This session is being continued from a previous upstream stage that was compacted by Trident. The structured digest below covers earlier agent outputs.\n';
-const COMPACT_DIRECT_RESUME_INSTRUCTION =
-'Resume directly from the upstream digest without repeating boilerplate preambles.';
-const tridentStats = {
-supersededCount: 0,
-collapsedChains: 0,
-messagesCollapsed: 0,
-tokensSavedEstimate: 0,
-originalChars: 0,
-compressedChars: 0
-};
-const promptCacheStore = new Map();
-const artifactStore = {};
-let pipelineFinalAgentId = null;
-// ===== Kitesurf 联网抓取（Cloudflare Browser Run · Quick Actions · browser=kitesurf）=====
-const KITESURF_PAGE_CAP = 12000;
-const KITESURF_RUN_FETCH_LIMIT = 5;
-const kitesurfCache = {};
-let kitesurfFetchCount = 0;
-let prefetchedPages = [];
-// ===== 共享扩展库（技能 Skills / MCP / 指令 Instructions）=====
-// 设计照 Magpie 的 Library：维护一份、按智能体分配、全线生效。
-// 平时只注入名录（省 token）；[[SKILL:名]] / [[MCP:服务器:工具:{参数}]] 标记在节点完成时解析，
-// 与 [[FETCH:]] / [[ATTACH_CODE:]] 同一套机制。数据只存本机 localStorage。
-const LIB_SKILLS_KEY = 'nexusai_skills';
-const LIB_MCP_KEY = 'nexusai_mcp_servers';
-const LIB_INST_KEY = 'nexusai_instructions';
-const SKILL_BODY_CAP = 9000;
-const SKILL_PER_AGENT_LIMIT = 2;
-const MCP_RESULT_CAP = 8000;
-const MCP_RUN_CALL_LIMIT = 5;
-const MCP_RELAY_URL = 'https://hghub-proxy.liguohao770801114.workers.dev/mcp';
-const LIB_LB = String.fromCharCode(12304);
-const LIB_RB = String.fromCharCode(12305);
-/* ===== 状态层 STATE：localStorage 统一收口（nxStore） ===== */
-const nxStore = {
-getArr(key) { try { const v = localStorage.getItem(key); if (v) { const p = JSON.parse(v); if (Array.isArray(p)) return p; } } catch (e) {} return []; },
-set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} },
-has(key) { try { return localStorage.getItem(key) !== null; } catch (e) { return false; } }
-};
-let libSkills = [];
-let libMcpServers = [];
-let libInstructions = [];
-let libSkillLoads = {};
-let mcpCallCount = 0;
-let mcpToolIndex = {};
-let mcpSessions = {};
-let evidenceStore = [];
-function recordEvidence(kind, label, text) { try { evidenceStore.push({ kind: kind, label: label, text: String(text || '') }); if (evidenceStore.length > 6) evidenceStore.shift(); } catch (e) {} }
+        <!-- Telemetry KPI Strip -->
+        <div class="grid-3">
+          <div class="kpi-card">
+            <div class="kpi-label truncate">已完成节点</div>
+            <div class="kpi-value kpi-cyan"><span id="kpiDoneAgents">0</span> / <span id="kpiEnabledAgents">5</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label truncate">消耗 / 省流</div>
+            <div class="kpi-value kpi-violet truncate">
+              <span id="kpiRealTokens">0</span>
+              <span id="kpiSavedTokens" class="kpi-saved">(省0)</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label truncate">累计耗时</div>
+            <div id="kpiRealLatency" class="kpi-value kpi-lime">0.0s</div>
+          </div>
+        </div>
 
-function libUid(prefix) { return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);}
-function libLoadArr(key) { return nxStore.getArr(key); }
-function libSave() { nxStore.set(LIB_SKILLS_KEY, libSkills); nxStore.set(LIB_MCP_KEY, libMcpServers); nxStore.set(LIB_INST_KEY, libInstructions); }
-function libSeedSkills() {
-return [
-{ id: libUid('sk'), name: '中文技术文档总结', desc: '总结英文/中文技术文档页面时用：分层提炼、保留数字与限制条件', body: '## 技能：中文技术文档总结\n按以下规程总结技术文档：\n1. 一句话定位：这是什么产品/能力，处于什么阶段（beta/正式）。\n2. 核心要点 3–7 条：解决什么问题、关键能力、使用方式、限制条件。\n3. 数字必须逐字核对原文（性能、配额、价格、覆盖率），不得四舍五入或臆造。\n4. 单列「做不到/不支持」清单。\n5. 接入方式逐项列全（API、绑定、协议、工具）。\n6. 只陈述页面明示内容；页面未提及的写「页面未明确」，禁止引入外部推断。', agents: ['agent-2'], enabled: true},
-{ id: libUid('sk'), name: '代码审计清单', desc: '审计代码时用：按注入/越权/竞态/数据安全逐项排查，只出问题清单', body: '## 技能：代码审计清单\n逐项排查并只报告命中的问题（级别 P0/P1/P2 + 位置 + 一句话说明）：\n1. 注入：SQL/命令/模板注入、未转义的用户输入拼接。\n2. 越权：缺失的权限校验、IDOR、路径穿越。\n3. 竞态：先查后写、非原子计数、文件覆盖。\n4. 数据安全：删除/更新是否可恢复、ID 是否复用、持久化是否会复活已删数据。\n5. 边界：空输入、超长输入、损坏的数据文件、编码问题。\n6. 密钥与日志：硬编码密钥、敏感信息进日志。\n未命中的项不要复述，不要重写代码，只出问题清单。', agents: ['agent-4'], enabled: true},
-{ id: libUid('sk'), name: '提示词优化', desc: '需要撰写或改进给其他智能体/模型的提示词时用', body: '## 技能：提示词优化\n优化提示词时遵循：\n1. 先定输出契约：格式、长度、必须包含与禁止包含的内容，写在提示词前部。\n2. 用结构化分段（角色/任务/约束/输出格式/示例），一段一个主题。\n3. 一次只针对一个失败模式改一处，避免多处同时改动无法归因。\n4. 给出可判定的验收标准，而不是「写得好一点」这类模糊要求。\n5. 需要引用外部材料时，要求标注来源，禁止凭空编造。', agents: ['all'], enabled: true}
-];
-}
-try {
-if (!nxStore.has(LIB_SKILLS_KEY)) { libSkills = libSeedSkills(); nxStore.set(LIB_SKILLS_KEY, libSkills); }
-else libSkills = libLoadArr(LIB_SKILLS_KEY);
-libMcpServers = libLoadArr(LIB_MCP_KEY);
-libInstructions = libLoadArr(LIB_INST_KEY);
-} catch (e) {}
+        <!-- Live Agent Pipeline -->
+        <div class="stack-sm">
+          <div class="row-between" style="padding: 0 2px;">
+            <h2 class="panel-title truncate flex-1">⚡ 智能体实时流水线</h2>
+            <button id="showReportModalBtn" type="button" class="btn btn-ghost btn-xs">📑 完整报告 & 导出</button>
+          </div>
+          <div id="pipelineAgentCards" class="stack-sm"></div>
+        </div>
 
-function libAssigned(item, agentId) {
-if (!item || item.enabled === false) return false;
-const a = (item.agents && item.agents.length)? item.agents: ['all'];
-if (!agentId) return true;
-return a.indexOf('all') >= 0 || a.indexOf(agentId) >= 0;
-}
-function libEscapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');}
+        <!-- Claw-Code Bus Log -->
+        <div class="cyber-panel stack-sm">
+          <div class="row-between">
+            <span class="panel-title truncate flex-1">🛰️ Claw-Code 内核调度日志</span>
+            <button id="clearLogBtn" type="button" class="btn btn-muted btn-xs">清空</button>
+          </div>
+          <div id="busLogBox" class="log-box safe-wrap">
+            <div class="log-empty">全自动内核待命中。派发任意任务后将自动执行路由、Trident 压缩与 API 推理...</div>
+          </div>
+        </div>
+      </section>
 
-function buildLibraryContext(forAgentId) {
-let out = '';
-const insts = libInstructions.filter(i => libAssigned(i, forAgentId));
-if (insts.length) out += '\n' + LIB_LB + '共享指令' + LIB_RB + '\n' + insts.map(i => i.text).join('\n') + '\n';
-const skills = libSkills.filter(s => libAssigned(s, forAgentId));
-const forcedSkills = skills.filter(s => s.forceLoad);
-const optionalSkills = skills.filter(s => !s.forceLoad);
-for (const s of forcedSkills) {
-let fbody = s.body || '';
-if (fbody.length > SKILL_BODY_CAP) fbody = fbody.slice(0, SKILL_BODY_CAP) + '\n...（技能正文过长，已截断至 ' + SKILL_BODY_CAP + ' 字）';
-out += '\n' + LIB_LB + '必加载技能：' + s.name + LIB_RB + '（本技能已由系统全文注入，无需再写加载标记；任务涉及本技能时必须严格按此规程执行）\n' + fbody + '\n';
-}
-if (optionalSkills.length) out += '\n' + LIB_LB + '技能库' + LIB_RB + '你可按需加载以下技能：需要某个技能的规程时，在产出中单独一行写 [[SKILL:技能名]]，系统会把技能全文替换到标记处；不要凭空编造技能内容。\n' + optionalSkills.map(s => '- ' + s.name + '：' + (s.desc || '')).join('\n') + '\n';
-const toolLines = [];
-libMcpServers.filter(sv => libAssigned(sv, forAgentId)).forEach(sv => {
-(mcpToolIndex[sv.name] || []).forEach(t => toolLines.push('- ' + sv.name + ' / ' + t.name + '：' + (t.description || '')));
-});
-if (toolLines.length) out += '\n' + LIB_LB + 'MCP 工具' + LIB_RB + '需要调用外部工具时，在产出中单独一行写 [[MCP:服务器名:工具名:{"参数名":值}]]，系统会执行并把结果替换到标记处。可用工具：\n' + toolLines.join('\n') + '\n';
-out += '\n' + LIB_LB + '工具使用方式' + LIB_RB + '你调用的工具（抓取/技能/MCP）执行后，系统会把结果交回给你，并请你结合结果给出本节点的最终版产出；最终版要真正使用结果中的数据，不要停留在等待或计划。\n';
-return out;
-}
+      <!-- Tab 2: 全息拓扑 -->
+      <section id="tabViewTopology" class="topology-view hidden">
+        <div id="stageCanvasWrap" class="topology-stage">
+          <canvas id="stageCanvas"></canvas>
+          <div class="topology-controls">
+            <button id="spawnSlipBurstBtn" type="button" class="topo-pill-btn topo-pill-pink">+ 飘字条</button>
+            <button id="toggleFullImmersionBtn" type="button" class="topo-pill-btn topo-pill-cyan">⛶ 全屏</button>
+          </div>
+        </div>
+      </section>
 
-async function resolveSkillMarkers(output, agentId) {
-const re = /\[\[SKILL:([^\]]+)\]\]/g;
-const names = [...new Set([...String(output || '').matchAll(re)].map(m => m[1].trim()))];
-if (!names.length) return output;
-let result = String(output);
-for (const name of names) {
-const sk = libSkills.find(s => s.name === name);
-let replacement;
-if (!sk || sk.enabled === false) replacement = '（技能库中没有已启用的技能「' + name + '」，已跳过）';
-else if (!libAssigned(sk, agentId)) replacement = '（技能「' + name + '」未分配给当前智能体，已跳过）';
-else if (sk.forceLoad) replacement = '（技能「' + name + '」已设为必加载，全文已注入你的上下文，无需重复加载）';
-else {
-libSkillLoads[agentId] = libSkillLoads[agentId] || 0;
-if (libSkillLoads[agentId] >= SKILL_PER_AGENT_LIMIT) replacement = '（本次运行该智能体加载技能次数已达上限，未加载「' + name + '」）';
-else {
-libSkillLoads[agentId]++;
-let body = sk.body || '';
-if (body.length > SKILL_BODY_CAP) body = body.slice(0, SKILL_BODY_CAP) + '\n...（技能正文过长，已截断至 ' + SKILL_BODY_CAP + ' 字）';
-replacement = '\n' + LIB_LB + '技能：' + sk.name + LIB_RB + '\n' + body + '\n' + LIB_LB + '/证据' + LIB_RB + '\n';
-}
-}
-result = result.replace(new RegExp('\\[\\[SKILL:\\s*' + libEscapeRegExp(name) + '\\s*\\]\\]', 'g'), () => replacement);
-}
-return result;
-}
+      <!-- Tab 3: 智能体编队与角色 -->
+      <section id="tabViewAgents" class="tab-section hidden">
+        <div class="cyber-panel stack">
+          <div class="row-between">
+            <div class="flex-1">
+              <h2 class="panel-title">🤖 智能体编队与角色</h2>
+              <p class="panel-subtitle">各编队独立持久化，切换不丢成员与提示词。</p>
+            </div>
+            <button id="openNewAgentBtn" type="button" class="btn btn-cyan btn-sm">＋ 新增 Agent</button>
+          </div>
+          <div id="squadBar" class="row-wrap"></div>
+          <div class="row-wrap">
+            <button id="newSquadBtn" type="button" class="btn btn-cyan btn-xs">＋ 新建编队</button>
+            <button id="dupSquadBtn" type="button" class="btn btn-muted btn-xs">复制当前</button>
+            <button id="renameSquadBtn" type="button" class="btn btn-muted btn-xs">重命名</button>
+            <button id="delSquadBtn" type="button" class="btn btn-danger-soft btn-xs">删除编队</button>
+          </div>
+        </div>
+        <div id="agentConfigContainer" class="stack"></div>
+      </section>
 
-function mcpParseBody(text, contentType) {
-const t = String(text || '');
-if ((contentType || '').indexOf('text/event-stream') >= 0 || /^data:/m.test(t)) {
-let last = null;
-t.split(/\r?\n/).forEach(line => { if (line.indexOf('data:') === 0) { try { last = JSON.parse(line.slice(5).trim());} catch (e) {}}});
-return last;
-}
-try { return JSON.parse(t);} catch (e) { return null;}
-}
-async function mcpRelayCall(server, rpcPayload, sessionId) {
-const headers = {};
-if (server.token) headers['Authorization'] = 'Bearer ' + server.token;
-if (sessionId) headers['Mcp-Session-Id'] = sessionId;
-const resp = await fetch(MCP_RELAY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json'}, body: JSON.stringify({ url: server.url, headers: headers, body: rpcPayload})});
-const data = await resp.json().catch(() => null);
-if (!data) throw new Error('MCP 中转无响应（HTTP ' + resp.status + '），请确认已部署含 /mcp 的新版 Worker');
-if (data.error) throw new Error(data.error);
-return data;
-}
-async function mcpRequest(server, method, params) {
-if (!(server.name in mcpSessions)) {
-mcpSessions[server.name] = null;
-try {
-const init = await mcpRelayCall(server, { jsonrpc: '2.0', id: 'init', method: 'initialize', params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'NexusAI', version: '10'}}}, null);
-if (init.sessionId) mcpSessions[server.name] = init.sessionId;
-try { await mcpRelayCall(server, { jsonrpc: '2.0', method: 'notifications/initialized'}, mcpSessions[server.name]);} catch (e) {}
-} catch (e) {}
-}
-const data = await mcpRelayCall(server, { jsonrpc: '2.0', id: 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), method: method, params: params || {}}, mcpSessions[server.name]);
-if (data.status === 404 && data.sessionId === '') { delete mcpSessions[server.name]; }
-const msg = mcpParseBody(data.body, data.contentType);
-if (!msg) throw new Error('MCP 服务器返回无法解析（HTTP ' + data.status + '）');
-if (msg.error) throw new Error('MCP 错误：' + (msg.error.message || JSON.stringify(msg.error)));
-return msg.result;
-}
-async function prefetchMcpTools() {
-mcpToolIndex = {};
-mcpSessions = {};
-evidenceStore = [];
-mcpCallCount = 0;
-libSkillLoads = {};
-const active = libMcpServers.filter(sv => sv.enabled!== false);
-for (const sv of active) {
-try {
-const result = await mcpRequest(sv, 'tools/list', {});
-const tools = (result && result.tools) || [];
-mcpToolIndex[sv.name] = tools.map(t => ({ name: t.name, description: String(t.description || '').replace(/\s+/g, ' ').slice(0, 120)}));
-appendLog('MCP', '服务器「' + sv.name + '」已连接，' + tools.length + ' 个工具可用', '#22D3EE');
-} catch (e) {
-mcpToolIndex[sv.name] = [];
-appendLog('MCP', '服务器「' + sv.name + '」连接失败：' + e.message + '（已跳过，不影响运行）', '#F59E0B');
-}
-}
-}
-async function resolveMcpMarkers(output, agentId) {
-const re = /\[\[MCP:([\s\S]+?)\]\]/g;
-const inners = [...new Set([...String(output || '').matchAll(re)].map(m => m[1]))];
-if (!inners.length) return output;
-let result = String(output);
-for (const inner of inners) {
-const marker = '[[MCP:' + inner + ']]';
-let replacement;
-const braceIdx = inner.indexOf('{');
-const head = (braceIdx >= 0? inner.slice(0, braceIdx): inner).replace(/:$/, '');
-const argsStr = braceIdx >= 0? inner.slice(braceIdx): '{}';
-const parts = head.split(':');
-const serverName = (parts[0] || '').trim();
-const toolName = (parts[1] || '').trim();
-const sv = libMcpServers.find(s => s.name === serverName);
-if (!sv || sv.enabled === false) replacement = '（未配置已启用的 MCP 服务器「' + serverName + '」，已跳过）';
-else if (!libAssigned(sv, agentId)) replacement = '（MCP 服务器「' + serverName + '」未分配给当前智能体，已跳过）';
-else if (!toolName) replacement = '（MCP 标记缺少工具名，已跳过）';
-else if (mcpCallCount >= MCP_RUN_CALL_LIMIT) replacement = '（本次运行 MCP 调用次数已达上限，已跳过）';
-else {
-mcpCallCount++;
-try {
-let args = {};
-try { args = JSON.parse(argsStr);} catch (e) { throw new Error('参数 JSON 解析失败');}
-const r = await mcpRequest(sv, 'tools/call', { name: toolName, arguments: args});
-let text = '';
-if (r && Array.isArray(r.content)) text = r.content.map(c => (c && c.text) || '').join('\n');
-else text = JSON.stringify(r);
-if (text.length > MCP_RESULT_CAP) text = text.slice(0, MCP_RESULT_CAP) + '\n...（结果过长，已截断至 ' + MCP_RESULT_CAP + ' 字）';
-recordEvidence('MCP', serverName + ' / ' + toolName, text);
-replacement = '\n' + LIB_LB + 'MCP 结果 ' + serverName + ' / ' + toolName + LIB_RB + '\n' + text + '\n' + LIB_LB + '/证据' + LIB_RB + '\n';
-} catch (e) { replacement = '（MCP 调用 ' + serverName + ' / ' + toolName + ' 失败：' + e.message + '，已跳过）';}
-}
-result = result.split(marker).join(replacement);
-}
-return result;
-}
+      <!-- Tab 4: API 设置 -->
+      <section id="tabViewSettings" class="tab-section hidden">
+        <div class="cyber-panel stack">
+          <div>
+            <h2 class="panel-title">⚙️ 模型 API 引擎设置</h2>
+            <p class="panel-subtitle">内置 Claw-Code 跨模型自适应层，原生兼容 OpenAI、Anthropic Claude 与推理模型。</p>
+          </div>
+          <div class="field-group">
+            <span class="field-label">一键选择服务商预设</span>
+            <div class="grid-2">
+              <button type="button" data-preset="deepseek" class="preset-btn">🚀 DeepSeek 官方</button>
+              <button type="button" data-preset="deepseek_r1" class="preset-btn">🧠 DeepSeek R1 (推理)</button>
+              <button type="button" data-preset="claude" class="preset-btn">🟣 Anthropic Claude</button>
+              <button type="button" data-preset="siliconflow" class="preset-btn">⚡ 硅基流动 SiliconFlow</button>
+              <button type="button" data-preset="qwen" class="preset-btn">☁️ 阿里百炼 (通义千问)</button>
+              <button type="button" data-preset="openai" class="preset-btn">🌐 OpenAI 官方 / 中转</button>
+              <button type="button" data-preset="kimi" class="preset-btn">🌙 月之暗面 Kimi</button>
+              <button type="button" data-preset="gemini" class="preset-btn">✨ Google Gemini</button>
+            </div>
+          </div>
 
-function parseSkillMarkdown(md) {
-const text = String(md || '');
-let name = '', desc = '', body = text;
-const m = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
-if (m) {
-const fm = m[1];
-const nm = fm.match(/^name:\s*(.+)$/m); if (nm) name = nm[1].trim().replace(/^["']|["']$/g, '');
-const dm = fm.match(/^description:\s*(.+)$/m); if (dm) desc = dm[1].trim().replace(/^["']|["']$/g, '');
-body = text.slice(m[0].length);
-}
-return { name: name, desc: desc, body: body.trim()};
-}
-function libUpsertSkill(parsed) {
-const existing = libSkills.find(s => s.name === parsed.name);
-if (existing) { existing.desc = parsed.desc || existing.desc; existing.body = parsed.body; existing.enabled = true;}
-else libSkills.push({ id: libUid('sk'), name: parsed.name, desc: parsed.desc || '', body: parsed.body, agents: ['all'], enabled: true});
-libSave();
-}
-async function libFetchText(url) {
-const r = await fetch(url);
-if (!r.ok) throw new Error('HTTP ' + r.status);
-return await r.text();
-}
-async function importSkillFromUrl(url) {
-const md = await libFetchText(url);
-const p = parseSkillMarkdown(md);
-if (!p.name) { const seg = String(url).split('/').filter(Boolean); p.name = seg.length >= 2? seg[seg.length - 2]: 'imported-skill';}
-if (!p.body) throw new Error('文件内容为空');
-libUpsertSkill(p);
-return p.name;
-}
-async function importSkillsFromRepo(repoUrl) {
-const m = String(repoUrl || '').match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)(?:\/tree\/([^\/\s]+)(?:\/([^\s#?]*))?)?/);
-if (!m) throw new Error('无法识别 GitHub 仓库地址');
-const owner = m[1];
-const repo = m[2].replace(/\.git$/, '');
-let branch = m[3] || '';
-const sub = (m[4] || '').replace(/\/$/, '');
-if (!branch) {
-const infoResp = await fetch('https://api.github.com/repos/' + owner + '/' + repo);
-if (!infoResp.ok) throw new Error('仓库读取失败 HTTP ' + infoResp.status);
-const info = await infoResp.json();
-branch = info.default_branch || 'main';
-}
-const treeResp = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/git/trees/' + encodeURIComponent(branch) + '?recursive=1');
-if (!treeResp.ok) throw new Error('仓库文件树读取失败 HTTP ' + treeResp.status);
-const tj = await treeResp.json();
-const paths = (tj.tree || []).filter(t => t.type === 'blob' && /(^|\/)SKILL\.md$/i.test(t.path) && (!sub || t.path.indexOf(sub) === 0)).map(t => t.path);
-if (!paths.length) throw new Error('仓库里没找到 SKILL.md');
-let ok = 0;
-for (const p of paths) {
-try { await importSkillFromUrl('https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + p); ok++;} catch (e) {}
-}
-if (!ok) throw new Error('找到 ' + paths.length + ' 个 SKILL.md，但全部导入失败');
-return ok;
-}
-function libExportJson() {
-try { persistActiveSquad(); } catch (e) {}
-return JSON.stringify({ nexusaiLibrary: 1, skills: libSkills, mcpServers: libMcpServers, instructions: libInstructions, squads: squads, activeSquadId: activeSquadId }, null, 2);
-}
-function libMergeById(existing, incoming) {
-if (!Array.isArray(incoming)) return existing;
-const out = existing.slice();
-incoming.forEach(item => {
-if (!item || typeof item !== 'object') return;
-const idx = (item.id != null)? out.findIndex(x => x && x.id === item.id): -1;
-if (idx >= 0) out[idx] = item; else out.push(item);
-});
-return out;
-}
-function libMergeSquads(existing, incoming) {
-if (!Array.isArray(incoming)) return existing;
-const out = existing.slice();
-incoming.forEach(item => {
-if (!item || typeof item !== 'object') return;
-let idx = (item.id != null)? out.findIndex(x => x && x.id === item.id): -1;
-if (idx < 0 && item.builtin) idx = out.findIndex(x => x && x.builtin === item.builtin);
-if (idx >= 0) out[idx] = item; else out.push(item);
-});
-return out;
-}
-function libImportJson(text) {
-const p = JSON.parse(String(text || ''));
-if (!p || typeof p!== 'object') throw new Error('不是有效的配置 JSON');
-if (Array.isArray(p.skills)) libSkills = libMergeById(libSkills, p.skills);
-if (Array.isArray(p.mcpServers)) libMcpServers = libMergeById(libMcpServers, p.mcpServers);
-if (Array.isArray(p.instructions)) libInstructions = libMergeById(libInstructions, p.instructions);
-libSave();
-if (Array.isArray(p.squads) && p.squads.length) {
-const beforeId = activeSquadId;
-const beforeBuiltin = (squads.find(s => s.id === beforeId) || {}).builtin;
-squads = libMergeSquads(squads, p.squads);
-const act = squads.find(s => s.id === p.activeSquadId) || squads.find(s => s.id === beforeId) || (beforeBuiltin? squads.find(s => s.builtin === beforeBuiltin): null) || squads[0];
-loadSquadIntoRuntime(act);
-saveSquads();
-if (typeof renderSquadBar === 'function') renderSquadBar();
-if (typeof refreshAfterSquadChange === 'function') refreshAfterSquadChange();
-}
-}
+          <div class="field-group">
+            <label class="field-label" for="cfgBaseUrl">接口地址 (Endpoint URL)</label>
+            <input id="cfgBaseUrl" type="url" class="field-input mono" value="https://api.deepseek.com/v1/chat/completions">
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="cfgApiKey">API Key (必填，仅存本机)</label>
+            <input id="cfgApiKey" type="password" class="field-input mono" placeholder="sk-...">
+          </div>
 
-// ===== 扩展库界面 =====
-function libAgentName(agentId) {
-if (agentId === 'all') return '全部智能体';
-const ag = agents.find(a => a.id === agentId);
-if (ag) return ag.name;
-try {
-if (Array.isArray(squads)) { for (const sq of squads) { const hit = (sq.agents || []).find(a => a && a.id === agentId); if (hit) return hit.name; } }
-} catch (e) {}
-return agentId;
-}
-function libAssignSummary(item) {
-const a = (item.agents && item.agents.length)? item.agents: ['all'];
-if (a.indexOf('all') >= 0) return '全部智能体';
-return a.map(libAgentName).join('、');
-}
-function libRenderAgentChecks(containerId, selected) {
-const box = document.getElementById(containerId);
-if (!box) return;
-const sel = (selected && selected.length)? selected: ['all'];
-let html = '<label class="flex items-center gap-1 text-[11px] text-slate-200 bg-slate-800 rounded-lg px-2 py-1 cursor-pointer"><input type="checkbox" value="all"' + (sel.indexOf('all') >= 0? ' checked': '') + '> 全部</label>';
-agents.forEach(ag => { html += '<label class="flex items-center gap-1 text-[11px] text-slate-200 bg-slate-800 rounded-lg px-2 py-1 cursor-pointer"><input type="checkbox" value="' + ag.id + '"' + (sel.indexOf(ag.id) >= 0? ' checked': '') + '> ' + ag.name + '</label>';});
-box.innerHTML = html;
-if (!box.dataset.checkBound && box.addEventListener) {
-box.dataset.checkBound = '1';
-box.addEventListener('change', (ev) => {
-const t = ev.target;
-if (!t || t.type !== 'checkbox') return;
-const allBox = box.querySelector('input[value="all"]');
-const others = [...box.querySelectorAll('input[type="checkbox"]:not([value="all"])')];
-if (t.value === 'all' && t.checked) {
-others.forEach(cb => { cb.checked = false; });
-} else if (t.value !== 'all' && t.checked && allBox) {
-allBox.checked = false;
-}
-if (allBox && !allBox.checked && others.every(cb => !cb.checked)) {
-allBox.checked = true;
-}
-});
-}
-}
-function libReadAgentChecks(containerId) {
-const box = document.getElementById(containerId);
-if (!box) return ['all'];
-const vals = [...box.querySelectorAll('input[type=checkbox]:checked')].map(i => i.value);
-return vals.length? vals: ['all'];
-}
-function libItemRow(kind, item) {
-const on = item.enabled!== false;
-const desc = kind === 'inst'? String(item.text || '').slice(0, 60): (item.desc || (kind === 'mcp'? item.url: ''));
-return '<div class="flex items-start justify-between gap-2 rounded-xl bg-slate-950 border border-slate-800 px-3 py-2">'
-+ '<div class="min-w-0"><p class="text-xs font-bold text-white truncate">' + libEsc(item.name) + (on? '': ' <span class="text-slate-500 font-normal">（已停用）</span>') + (kind === 'skill' && item.forceLoad? ' <span class="text-cyan-300 font-normal">· 必加载</span>': '') + '</p>'
-+ '<p class="text-[11px] text-slate-400 truncate">' + libEsc(desc) + '</p>'
-+ '<p class="text-[10px] text-slate-500">分配：' + libEsc(libAssignSummary(item)) + '</p></div>'
-+ '<div class="flex gap-1 shrink-0">'
-+ '<button type="button" data-libact="edit" data-kind="' + kind + '" data-id="' + item.id + '" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-cyan-300">编辑</button>'
-+ '<button type="button" data-libact="toggle" data-kind="' + kind + '" data-id="' + item.id + '" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-slate-300">' + (on? '停用': '启用') + '</button>'
-+ '<button type="button" data-libact="del" data-kind="' + kind + '" data-id="' + item.id + '" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-rose-300">删除</button>'
-+ '</div></div>';
-}
-function libEsc(s) { return String(s == null? '': s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');}
-function libCollection(kind) { return kind === 'skill'? libSkills: (kind === 'mcp'? libMcpServers: libInstructions);}
-function renderLibrary() {
-const counts = document.getElementById('libCounts');
-if (!counts) return;
-counts.textContent = libSkills.length + ' 技能 · ' + libMcpServers.length + ' MCP · ' + libInstructions.length + ' 指令';
-document.getElementById('libSkillList').innerHTML = libSkills.length? libSkills.map(s => libItemRow('skill', s)).join(''): '<p class="text-[11px] text-slate-500">还没有技能，在下面添加或导入。</p>';
-document.getElementById('libMcpList').innerHTML = libMcpServers.length? libMcpServers.map(s => libItemRow('mcp', s)).join(''): '<p class="text-[11px] text-slate-500">还没有 MCP 服务器，在下面添加。</p>';
-document.getElementById('libInstList').innerHTML = libInstructions.length? libInstructions.map(s => libItemRow('inst', s)).join(''): '<p class="text-[11px] text-slate-500">还没有指令，在下面添加。</p>';
-if (!document.getElementById('libSkillEditId').value) libRenderAgentChecks('libSkillAgents', ['all']);
-if (!document.getElementById('libMcpEditId').value) libRenderAgentChecks('libMcpAgents', ['all']);
-if (!document.getElementById('libInstEditId').value) libRenderAgentChecks('libInstAgents', ['all']);
-}
-function libFillForm(kind, item) {
-if (kind === 'skill') {
-document.getElementById('libSkillEditId').value = item.id;
-document.getElementById('libSkillName').value = item.name || '';
-document.getElementById('libSkillDesc').value = item.desc || '';
-document.getElementById('libSkillBody').value = item.body || '';
-document.getElementById('libSkillForce').checked = !!item.forceLoad;
-libRenderAgentChecks('libSkillAgents', item.agents);
-document.getElementById('libSkillCancelBtn').classList.remove('hidden');
-} else if (kind === 'mcp') {
-document.getElementById('libMcpEditId').value = item.id;
-document.getElementById('libMcpName').value = item.name || '';
-document.getElementById('libMcpUrl').value = item.url || '';
-document.getElementById('libMcpToken').value = item.token || '';
-libRenderAgentChecks('libMcpAgents', item.agents);
-document.getElementById('libMcpCancelBtn').classList.remove('hidden');
-} else {
-document.getElementById('libInstEditId').value = item.id;
-document.getElementById('libInstName').value = item.name || '';
-document.getElementById('libInstText').value = item.text || '';
-libRenderAgentChecks('libInstAgents', item.agents);
-document.getElementById('libInstCancelBtn').classList.remove('hidden');
-}
-}
-function libClearForm(kind) {
-if (kind === 'skill') {
-document.getElementById('libSkillEditId').value = '';
-document.getElementById('libSkillName').value = '';
-document.getElementById('libSkillDesc').value = '';
-document.getElementById('libSkillBody').value = '';
-document.getElementById('libSkillForce').checked = false;
-libRenderAgentChecks('libSkillAgents', ['all']);
-document.getElementById('libSkillCancelBtn').classList.add('hidden');
-} else if (kind === 'mcp') {
-document.getElementById('libMcpEditId').value = '';
-document.getElementById('libMcpName').value = '';
-document.getElementById('libMcpUrl').value = '';
-document.getElementById('libMcpToken').value = '';
-libRenderAgentChecks('libMcpAgents', ['all']);
-document.getElementById('libMcpCancelBtn').classList.add('hidden');
-} else {
-document.getElementById('libInstEditId').value = '';
-document.getElementById('libInstName').value = '';
-document.getElementById('libInstText').value = '';
-libRenderAgentChecks('libInstAgents', ['all']);
-document.getElementById('libInstCancelBtn').classList.add('hidden');
-}
-}
-function bindLibraryUI() {
-const sec = document.getElementById('tabViewLibrary');
-if (!sec || sec.dataset.bound) return;
-sec.dataset.bound = '1';
-document.querySelector('[data-nav="library"]').addEventListener('click', () => renderLibrary());
-sec.addEventListener('click', (ev) => {
-const btn = ev.target.closest('[data-libact]');
-if (!btn) return;
-const kind = btn.getAttribute('data-kind');
-const id = btn.getAttribute('data-id');
-const col = libCollection(kind);
-const item = col.find(x => x.id === id);
-if (!item) return;
-const act = btn.getAttribute('data-libact');
-if (act === 'edit') libFillForm(kind, item);
-else if (act === 'toggle') { item.enabled = item.enabled === false? true: false; libSave(); renderLibrary();}
-else if (act === 'del') { const idx = col.indexOf(item); if (idx >= 0) col.splice(idx, 1); libSave(); renderLibrary(); showToast('已删除：' + item.name);}
-});
-document.getElementById('libSkillSaveBtn').addEventListener('click', () => {
-const name = document.getElementById('libSkillName').value.trim();
-const body = document.getElementById('libSkillBody').value;
-if (!name) { showToast('技能名不能为空'); return;}
-if (!body.trim()) { showToast('技能正文不能为空'); return;}
-const editId = document.getElementById('libSkillEditId').value;
-const data = { name: name, desc: document.getElementById('libSkillDesc').value.trim(), body: body, agents: libReadAgentChecks('libSkillAgents'), forceLoad: document.getElementById('libSkillForce').checked};
-if (editId) { const it = libSkills.find(s => s.id === editId); if (it) Object.assign(it, data);}
-else libSkills.push(Object.assign({ id: libUid('sk'), enabled: true}, data));
-libSave(); libClearForm('skill'); renderLibrary(); showToast('技能已保存：' + name);
-});
-document.getElementById('libSkillPasteBtn').addEventListener('click', () => {
-const raw = document.getElementById('libSkillBody').value;
-if (!raw.trim()) { showToast('先把 SKILL.md 粘到正文框里'); return;}
-const p = parseSkillMarkdown(raw);
-if (p.name) document.getElementById('libSkillName').value = p.name;
-if (p.desc) document.getElementById('libSkillDesc').value = p.desc;
-document.getElementById('libSkillBody').value = p.body;
-showToast(p.name? '已拆出技能：' + p.name: '没读到 frontmatter，请手动填名字');
-});
-document.getElementById('libSkillCancelBtn').addEventListener('click', () => libClearForm('skill'));
-document.getElementById('libSkillImportBtn').addEventListener('click', async () => {
-const url = document.getElementById('libSkillImportUrl').value.trim();
-const msg = document.getElementById('libSkillMsg');
-if (!url) { showToast('先填 SKILL.md 的 raw 链接'); return;}
-msg.textContent = '正在导入…';
-try { const n = await importSkillFromUrl(url); msg.textContent = '已导入技能：' + n; renderLibrary();}
-catch (e) { msg.textContent = '导入失败：' + e.message;}
-});
-document.getElementById('libRepoImportBtn').addEventListener('click', async () => {
-const url = document.getElementById('libRepoUrl').value.trim();
-const msg = document.getElementById('libSkillMsg');
-if (!url) { showToast('先填 GitHub 仓库地址'); return;}
-msg.textContent = '正在扫描仓库并批量导入…';
-try { const n = await importSkillsFromRepo(url); msg.textContent = '已从仓库导入 ' + n + ' 个技能'; renderLibrary();}
-catch (e) { msg.textContent = '批量导入失败：' + e.message;}
-});
-document.getElementById('libMcpSaveBtn').addEventListener('click', () => {
-const name = document.getElementById('libMcpName').value.trim();
-const url = document.getElementById('libMcpUrl').value.trim();
-if (!name) { showToast('服务器名不能为空'); return;}
-if (!/^https:\/\//i.test(url)) { showToast('服务器地址必须是 https:// 开头'); return;}
-const editId = document.getElementById('libMcpEditId').value;
-const data = { name: name, url: url, token: document.getElementById('libMcpToken').value.trim(), agents: libReadAgentChecks('libMcpAgents')};
-if (editId) { const it = libMcpServers.find(s => s.id === editId); if (it) Object.assign(it, data);}
-else libMcpServers.push(Object.assign({ id: libUid('mcp'), enabled: true}, data));
-libSave(); libClearForm('mcp'); renderLibrary(); showToast('MCP 服务器已保存：' + name);
-});
-document.getElementById('libMcpTestBtn').addEventListener('click', async () => {
-const msg = document.getElementById('libMcpMsg');
-const name = document.getElementById('libMcpName').value.trim();
-const url = document.getElementById('libMcpUrl').value.trim();
-if (!name ||!/^https:\/\//i.test(url)) { showToast('先填好服务器名和 https 地址'); return;}
-const sv = { name: name, url: url, token: document.getElementById('libMcpToken').value.trim()};
-msg.textContent = '正在连接…';
-try {
-delete mcpSessions[name];
-const result = await mcpRequest(sv, 'tools/list', {});
-const tools = (result && result.tools) || [];
-msg.textContent = '连接成功：' + tools.length + ' 个工具' + (tools.length? '（' + tools.slice(0, 5).map(t => t.name).join('、') + (tools.length > 5? '…': '') + '）': '');
-} catch (e) { msg.textContent = '连接失败：' + e.message;}
-});
-document.getElementById('libMcpCancelBtn').addEventListener('click', () => libClearForm('mcp'));
-document.getElementById('libInstSaveBtn').addEventListener('click', () => {
-const name = document.getElementById('libInstName').value.trim();
-const text = document.getElementById('libInstText').value;
-if (!name) { showToast('指令名不能为空'); return;}
-if (!text.trim()) { showToast('指令正文不能为空'); return;}
-const editId = document.getElementById('libInstEditId').value;
-const data = { name: name, text: text, agents: libReadAgentChecks('libInstAgents')};
-if (editId) { const it = libInstructions.find(s => s.id === editId); if (it) Object.assign(it, data);}
-else libInstructions.push(Object.assign({ id: libUid('in'), enabled: true}, data));
-libSave(); libClearForm('inst'); renderLibrary(); showToast('指令已保存：' + name);
-});
-document.getElementById('libInstCancelBtn').addEventListener('click', () => libClearForm('inst'));
-document.getElementById('libExportBtn').addEventListener('click', () => {
-document.getElementById('libIoBox').classList.remove('hidden');
-document.getElementById('libIoText').value = libExportJson();
-});
-document.getElementById('libImportBtn').addEventListener('click', () => {
-document.getElementById('libIoBox').classList.remove('hidden');
-document.getElementById('libIoText').focus();
-});
-document.getElementById('libIoDoImportBtn').addEventListener('click', () => {
-try { libImportJson(document.getElementById('libIoText').value); libClearForm('skill'); libClearForm('mcp'); libClearForm('inst'); renderLibrary(); showToast('配置已导入');}
-catch (e) { showToast('导入失败：' + e.message);}
-});
-document.getElementById('libIoCopyBtn').addEventListener('click', () => { copyText(document.getElementById('libIoText').value, '已复制配置 JSON');});
-}
+          <div class="grid-2">
+            <div class="field-group">
+              <label class="field-label" for="cfgModel">模型名称 (Model)</label>
+              <input id="cfgModel" type="text" class="field-input mono" value="deepseek-chat">
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="cfgTemp">温度 (Temperature)</label>
+              <input id="cfgTemp" type="number" step="0.05" min="0" max="2" class="field-input mono" value="0.3">
+            </div>
+          </div>
 
-function kitesurfConfigured() {
-return Boolean((apiSettings.cfAccountId || '').trim() && (apiSettings.cfToken || '').trim());
-}
+          <label class="checkbox-row">
+            <input id="cfgStream" type="checkbox" checked>
+            <span>启用 SSE 实时流式输出（边推理边实时渲染）</span>
+          </label>
 
-function extractUrls(text) {
-const found = String(text || '').match(/https?:\/\/[^\s<>"'，。；、（）【】「」\u4e00-\u9fff\uff00-\uffef]+/g) || [];
-const seen = new Set();
-const urls = [];
-for (let u of found) {
-u = u.replace(/[，。；、）】]+$/, '');
-if (!seen.has(u)) { seen.add(u); urls.push(u);}
-}
-return urls;
-}
+          <hr class="divider">
 
-function cleanNavMarkdown(md) {
-  // 去掉文档站返回 Markdown 里的导航垃圾行（纯链接列表项 / 整行单链接 / 纯图片行），
-  // 代码块内的行不动；过滤后折叠多余空行。
-  const lines = String(md).split("\n");
-  const out = [];
-  let inFence = false;
-  for (const line of lines) {
-    if (/^\s*```/.test(line)) inFence = !inFence;
-    if (!inFence) {
-      const t = line.trim();
-      if (/^[-*]\s*\[[^\]]*\]\([^)]*\)\s*$/.test(t)) continue;
-      if (/^\[[^\]]*\]\([^)]*\)$/.test(t)) continue;
-      if (/^!\[[^\]]*\]\([^)]*\)$/.test(t)) continue;
-    }
-    out.push(line);
-  }
-  return out.join("\n").replace(/\n{3,}/g, "\n\n");
-}
+          <div class="field-group">
+            <label class="field-label" for="cfgCfAccountId">Cloudflare Account ID（可选 · Kitesurf 联网抓取）</label>
+            <input id="cfgCfAccountId" type="text" class="field-input mono" placeholder="Cloudflare 账号 ID">
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="cfgCfToken">Cloudflare API Token（Browser Rendering 权限）</label>
+            <input id="cfgCfToken" type="password" class="field-input mono" placeholder="仅存本机浏览器，勿外传">
+          </div>
 
-async function fetchPageViaKitesurf(url) {
-  const cached = kitesurfCache[url];
-  if (cached) {
-    if (cached.error) throw new Error(cached.error);
-    return cached.text;
-  }
-  if (kitesurfFetchCount >= KITESURF_RUN_FETCH_LIMIT) return null;
-  kitesurfFetchCount++;
-  try {
-    const resp = await fetch('https://hghub-proxy.liguohao770801114.workers.dev/browse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accountId: apiSettings.cfAccountId.trim(), token: apiSettings.cfToken.trim(), url: url })
-    });
-    const data = await resp.json().catch(() => null);
-    if (!resp.ok || !data || data.success === false) {
-      const msg = (data && data.errors && data.errors[0] && data.errors[0].message) || ('HTTP ' + resp.status);
-      throw new Error(msg);
-    }
-    let text = '';
-    const r = data.result;
-    if (typeof r === 'string') text = r;
-    else if (r && typeof r === 'object') text = r.markdown || r.content || r.html || '';
-    const cleanedText = cleanNavMarkdown(text);
-    if (cleanedText.trim().length >= 800 || cleanedText.length >= text.length * 0.25) text = cleanedText;
-    if (text.length > KITESURF_PAGE_CAP) text = text.slice(0, KITESURF_PAGE_CAP) + '\n...（正文过长，已截断至 ' + KITESURF_PAGE_CAP + ' 字）';
-    kitesurfCache[url] = { text: text };
-    return text;
-  } catch (e) {
-    kitesurfCache[url] = { error: e.message };
-    throw e;
-  }
-}
+          <div class="row" style="padding-top: 4px;">
+            <button id="saveCfgBtn" type="button" class="btn btn-primary btn-block">💾 保存配置</button>
+            <button id="testCfgBtn" type="button" class="btn btn-ghost btn-block">🔌 测试连通性</button>
+          </div>
+          <div id="testResultBanner" class="test-banner info safe-wrap hidden"></div>
+        </div>
+      </section>
 
-async function resolveFetchMarkers(output) {
-const re = /\[\[FETCH:\s*(https?:\/\/[^\]\s]+)\s*\]\]/g;
-const urls = [...new Set([...String(output || '').matchAll(re)].map(m => m[1]))];
-if (!urls.length) return output;
-let result = String(output);
-for (const url of urls) {
-const markerRe = new RegExp('\\[\\[FETCH:\\s*' + libEscapeRegExp(url) + '\\s*\\]\\]', 'g');
-if (!kitesurfConfigured()) {
-result = result.replace(markerRe, () => '（未配置 Cloudflare 凭证，未能抓取 ' + url + '）');
-continue;
-}
-try {
-const page = await fetchPageViaKitesurf(url);
-if (page) recordEvidence('FETCH', url, page);
-result = result.replace(markerRe, () => page ? '\n【Kitesurf 抓取 ' + url + '】\n' + page + '\n' + '【/证据】\n' : '（本次运行抓取次数已达上限，未抓取 ' + url + '）');
-} catch (e) {
-result = result.replace(markerRe, () => '（抓取 ' + url + ' 失败：' + e.message + '，已跳过）');
-}
-}
-return result;
-}
+      <!-- Tab 5: 共享扩展库（分层子标签，无冗余长滚动） -->
+      <section id="tabViewLibrary" class="tab-section hidden">
+        <div class="cyber-panel stack-sm">
+          <div class="row-between">
+            <h2 class="panel-title">📚 共享扩展库</h2>
+            <span id="libCounts" class="mono" style="font-size: 11px; color: var(--neon-cyan);"></span>
+          </div>
+          <p class="panel-subtitle">维护一份、按编队位次全线生效；默认只注名录省 Token，设为「必加载」则全文直注。</p>
+          <div class="seg-tabs" role="tablist">
+            <button type="button" data-libtab="skills" class="seg-btn active">✨ 技能</button>
+            <button type="button" data-libtab="mcp" class="seg-btn">🔌 MCP</button>
+            <button type="button" data-libtab="inst" class="seg-btn">📜 指令</button>
+            <button type="button" data-libtab="io" class="seg-btn">⇄ 备份</button>
+          </div>
+        </div>
 
-function fnv1aFingerprint(text) {
-let hash = 0x811c9dc5;
-for (let i = 0; i < text.length; i++) {
-hash ^= text.charCodeAt(i);
-hash = Math.imul(hash, 0x01000193) >>> 0;
-}
-return 'v1:' + hash.toString(16).padStart(8, '0') + ':' + text.length.toString(16);
-}
-function splitCodeSegments(text) {
-const segments = [];
-const re = /```[^\n]*\n[\s\S]*?(?:```|$)/g;
-let last = 0;
-let m;
-while ((m = re.exec(text)) !== null) {
-if (m.index > last) segments.push({ code: false, text: text.slice(last, m.index) });
-segments.push({ code: true, text: m[0] });
-last = m.index + m[0].length;
-}
-if (last < text.length) segments.push({ code: false, text: text.slice(last) });
-return segments;
-}
-function compressProseLines(rawText, maxChars, maxLines = 26, maxLineChars = 170) {
-const cleaned = String(rawText || '').trim();
-if (cleaned.length <= maxChars) {
-return { summary: cleaned, removedDuplicates: 0, omittedLines: 0 };
-}
-const rawLines = cleaned.split('\n');
-const seen = new Set();
-const uniqueLines = [];
-let removedDuplicates = 0;
-for (const line of rawLines) {
-const trimmed = line.trim();
-if (!trimmed) continue;
-const normKey = trimmed.toLowerCase().replace(/\s+/g, ' ');
-if (normKey.length > 18 && seen.has(normKey)) {
-removedDuplicates++;
-continue;
-}
-if (normKey.length > 18) seen.add(normKey);
-uniqueLines.push(trimmed.length > maxLineChars ? trimmed.slice(0, maxLineChars) + '...' : trimmed);
-}
-const scored = uniqueLines.map((line, idx) => {
-let priority = 1;
-if (/^(#{1,4}\s|【|1\.|2\.|3\.|\*\s|-\s)/.test(line)) priority += 3;
-if (/(def |class |function |interface |struct |pub fn |P0|P1|漏洞|核心|架构|接口|结论)/.test(line)) priority += 4;
-if (idx < 4 || idx >= uniqueLines.length - 3) priority += 2;
-return { line, idx, priority };
-});
-scored.sort((a, b) => b.priority - a.priority || a.idx - b.idx);
-const picked = [];
-let charCount = 0;
-for (const item of scored) {
-if (picked.length >= maxLines) break;
-if (charCount + item.line.length + 1 > maxChars) continue;
-picked.push(item);
-charCount += item.line.length + 1;
-}
-picked.sort((a, b) => a.idx - b.idx);
-const finalLines = picked.map(p => p.line);
-const omitted = Math.max(0, uniqueLines.length - finalLines.length);
-if (omitted > 0) {
-finalLines.push(`...[Trident 自动精简 ${omitted} 行次要细节，完整内容保留在节点报告]...`);
-}
-return { summary: finalLines.join('\n'), removedDuplicates, omittedLines: omitted };
-}
-function splitEvidenceSegments(text) {
-const re = new RegExp(LIB_LB + '(?:MCP 结果|Kitesurf 抓取|技能：)[\\s\\S]*?' + LIB_LB + '/证据' + LIB_RB, 'g');
-const segs = [];
-let last = 0;
-let m;
-while ((m = re.exec(text)) !== null) {
-if (m.index > last) segs.push({ evidence: false, text: text.slice(last, m.index) });
-segs.push({ evidence: true, text: m[0] });
-last = m.index + m[0].length;
-}
-if (last < text.length) segs.push({ evidence: false, text: text.slice(last) });
-return segs;
-}
-function compressUpstreamOutput(rawText, maxChars, maxLines = 26, maxLineChars = 170) {
-// 省Token v2: 代码块永不做行压缩(原样传递, 总量上限 9000 字符), 只有散文部分走行评分精简。
-const cleaned = String(rawText || '').replace(/<analysis>[\s\S]*?<\/analysis>/gi, '').trim();
-const origChars = cleaned.length;
-if (cleaned.indexOf(LIB_LB) >= 0) {
-const evSegs = splitEvidenceSegments(cleaned);
-if (evSegs.some(s => s.evidence)) {
-const EVIDENCE_PASS_CAP = 9000;
-let evTotal = 0;
-let evOmitted = 0;
-const evParts = [];
-for (const s of evSegs) {
-if (s.evidence) {
-if (evTotal + s.text.length <= EVIDENCE_PASS_CAP) { evParts.push(s.text); evTotal += s.text.length; }
-else { const room = Math.max(0, EVIDENCE_PASS_CAP - evTotal); if (room > 200) { evParts.push(s.text.slice(0, room) + '\n...[证据过长已截断，完整版保留在该节点报告中]...'); evTotal += room; } }
-} else {
-const sub = compressUpstreamOutput(s.text, maxChars, maxLines, maxLineChars);
-evOmitted += sub.omittedLines;
-if (sub.summary && sub.summary.trim()) evParts.push(sub.summary);
-}
-}
-const evSummary = evParts.join('\n\n');
-return { summary: evSummary, originalChars: origChars, compressedChars: evSummary.length, removedDuplicates: 0, omittedLines: evOmitted, truncated: evSummary.length < origChars };
-}
-}
+        <!-- Library Sub-tab: Skills -->
+        <div id="libPaneSkills" class="cyber-panel stack">
+          <h3 class="panel-title">✨ 技能库（Skills）</h3>
+          <div id="libSkillList" class="stack-sm"></div>
+          <hr class="divider">
+          <div class="stack-sm">
+            <input id="libSkillName" type="text" class="field-input" placeholder="技能名（智能体用 [[SKILL:技能名]] 加载）">
+            <input id="libSkillDesc" type="text" class="field-input" placeholder="一句话描述（进名录，帮智能体判断何时用）">
+            <textarea id="libSkillBody" rows="5" class="field-textarea mono" placeholder="技能正文：规程、清单、模板等；也可直接粘整份 SKILL.md 后点击下方拆解导入。"></textarea>
+            <div class="field-group">
+              <span class="field-label">分配给</span>
+              <div id="libSkillAgents" class="row-wrap"></div>
+            </div>
+            <label class="checkbox-row">
+              <input id="libSkillForce" type="checkbox">
+              <span>必加载：全文直接注入被分配智能体，不等它主动调用</span>
+            </label>
+            <input id="libSkillEditId" type="hidden">
+            <div class="row">
+              <button id="libSkillSaveBtn" type="button" class="btn btn-primary btn-block">💾 保存技能</button>
+              <button id="libSkillPasteBtn" type="button" class="btn btn-muted btn-block">📋 拆解 SKILL.md</button>
+              <button id="libSkillCancelBtn" type="button" class="btn btn-muted btn-sm hidden">取消</button>
+            </div>
+            <div class="row">
+              <input id="libSkillImportUrl" type="text" class="field-input mono flex-1" placeholder="单个 SKILL.md 的 raw 链接">
+              <button id="libSkillImportBtn" type="button" class="btn btn-ghost btn-sm">导入</button>
+            </div>
+            <div class="row">
+              <input id="libRepoUrl" type="text" class="field-input mono flex-1" placeholder="GitHub 仓库地址（批量导入全部 SKILL.md）">
+              <button id="libRepoImportBtn" type="button" class="btn btn-ghost btn-sm">批量导入</button>
+            </div>
+            <p id="libSkillMsg" class="panel-subtitle safe-wrap"></p>
+          </div>
+        </div>
 
-const CODE_PASS_CAP = 9000;
-const segments = splitCodeSegments(cleaned);
-const hasCode = segments.some(seg => seg.code);
-if (!hasCode) {
-if (origChars <= maxChars) {
-return { summary: cleaned, originalChars: origChars, compressedChars: origChars, removedDuplicates: 0, omittedLines: 0, truncated: false };
-}
-const p = compressProseLines(cleaned, maxChars, maxLines, maxLineChars);
-return { summary: p.summary, originalChars: origChars, compressedChars: p.summary.length, removedDuplicates: p.removedDuplicates, omittedLines: p.omittedLines, truncated: true };
-}
-let codeTotal = 0;
-let omittedLines = 0;
-let removedDuplicates = 0;
-const parts = [];
-for (const seg of segments) {
-if (seg.code) {
-if (codeTotal + seg.text.length <= CODE_PASS_CAP) {
-parts.push(seg.text);
-codeTotal += seg.text.length;
-} else {
-const lines = seg.text.split('\n');
-const headCount = Math.max(10, Math.floor(lines.length * 0.6));
-const head = lines.slice(0, headCount);
-const tail = lines.slice(-12);
-const omitted = Math.max(0, lines.length - head.length - tail.length);
-omittedLines += omitted;
-parts.push(head.join('\n') + '\n```\n...[代码过长，中间省略约 ' + omitted + ' 行，完整版保留在该节点报告中]...\n```\n' + tail.join('\n'));
-codeTotal += seg.text.length;
-}
-} else {
-const prose = seg.text.trim();
-if (!prose) continue;
-if (prose.length <= maxChars) { parts.push(prose); continue; }
-const p = compressProseLines(prose, maxChars, maxLines, maxLineChars);
-omittedLines += p.omittedLines;
-removedDuplicates += p.removedDuplicates;
-parts.push(p.summary);
-}
-}
-const summary = parts.join('\n\n');
-return { summary, originalChars: origChars, compressedChars: summary.length, removedDuplicates, omittedLines, truncated: summary.length < origChars };
-}
-function autoRouteTask(promptText) {
-const lower = String(promptText || '').toLowerCase();
-const routes = [];
-if (/(架构|设计|系统|拆解|秒杀|全案)/.test(lower)) routes.push('/plan');
-if (/(代码|python|swift|redis|实现|脚本|函数)/.test(lower)) routes.push('FileEditTool');
-if (/(安全|审计|漏洞|压测|白名单|风险)/.test(lower)) routes.push('/security');
-if (/(调研|对比|选型|分析|量化|回测)/.test(lower)) routes.push('GrepTool');
-if (routes.length === 0) routes.push('AgentTool', 'QueryEngine');
-const blocked = /(rm\s+-rf\s+\/|mkfs|dd\s+if=|:(){|\/etc\/shadow)/i.test(promptText);
-return { routes, blocked };
-}
-const SQUAD_TEMPLATES = {
-engineering: [
-{ id: 'agent-1', code: 'N-01', name: 'Nexus-01 架构总控', shortName: '总控', role: '全局任务拆解与技术纲要', icon: '🧠', color: '#06B6D4',
-systemPrompt: '你是 Nexus-01 架构总控智能体。请针对用户提交的任务，输出清晰的结构化拆解方案、核心架构设计原则以及各子模块的协作边界。请直接给出专业干货。【职责约束】你只负责拆解、架构与接口约定，禁止输出完整代码实现，代码由研发节点编写。（禁回填）你只做拆解与约定，禁止在产出中回填或宣布任何检索结果、数据或核验结论；即使你调用了工具，数据与结论也一律由执行节点产出，你的产出只含方案、约定与验收标准。' },
-{ id: 'agent-2', code: 'R-02', name: 'Research-02 深度调研', shortName: '调研', role: '技术选型对比与行业基准', icon: '🔎', color: '#F59E0B',
-systemPrompt: '你是 Research-02 深度调研智能体。请结合用户的原始需求与总控架构方案，给出具体的技术栈选型对比、核心算法/协议分析及行业最佳实践参数。【省Token协议】只给选型结论与关键参数，不要复述任务原文。' },
-{ id: 'agent-3', code: 'C-03', name: 'Coder-03 核心研发', shortName: '研发', role: '核心模块代码与接口实现', icon: '💻', color: '#6366F1',
-systemPrompt: '你是 Coder-03 核心研发智能体。请根据上游的总控架构与技术选型，编写关键生产级代码实现（含清晰注释、数据结构定义与核心处理逻辑）。【省Token协议】完整代码只在本节点输出一次且用代码块包裹；说明文字从简，不要在代码块之外重复粘贴代码。' },
-{ id: 'agent-4', code: 'S-04', name: 'SecOps-04 安全与压测', shortName: '安全', role: '漏洞审计、并发瓶颈与加固', icon: '🛡️', color: '#10B981',
-systemPrompt: '你是 SecOps-04 安全审计与高并发压测智能体。请严格审查上游的架构与代码，指出潜在的并发竞争、安全漏洞或异常边界，并提供具体的修复加固方案与验证清单。【省Token协议】只输出问题清单：每条含编号、级别(P0/P1/P2)、位置(函数名或行号)、问题一句话、修法一句话；禁止复述或重写完整代码，必须给修复代码时只给最小改动片段；没有问题就写「未发现问题」并列出已核查项。' },
-{ id: 'agent-5', code: 'M-05', name: 'Memory-05 交付中枢', shortName: '汇总', role: '全局整合与落地执行蓝图', icon: '📑', color: '#EC4899',
-systemPrompt: '你是 Memory-05 交付汇总智能体。请将前面所有智能体的关键结论、核心架构、代码要点与安全准则汇总为一份条理清晰、可立即落地的执行蓝图。【省Token协议】禁止凭摘要重写或复述上游代码；（数据保真协议）最终结论中的每个数字、限额与事实都必须能在上游产出或系统原始证据中逐字找到；上游标注为未确认、MISSING 或未找到的，必须原样保留为未确认，禁止用常识或推测补全；上游互相矛盾时必须明确指出矛盾并以原始证据为准，不得自行调和；最终交付中的完整代码用单独一行 [[ATTACH_CODE:agent-3]] 引用，系统会自动附上 Coder-03 的代码原文，你只需写结论、要点、安全清单落实情况与使用说明；仅当安全清单含 P0 且必须改代码时，才亲自输出修正后的完整代码且不使用引用标记。' }
-],
-secops: [
-{ id: 'agent-1', code: 'T-01', name: 'Threat-01 威胁建模总控', shortName: '建模', role: '攻击面梳理与权限边界定义', icon: '🎯', color: '#06B6D4',
-systemPrompt: '你是 Threat-01 威胁建模总控智能体。请采用 STRIDE 模型梳理目标系统的攻击面、信任边界与高危风险点。【职责约束】你只负责威胁建模与边界定义，禁止输出完整代码实现，代码由补丁节点编写。（禁回填）你只做建模与边界定义，禁止在产出中回填或宣布任何检索结果、数据或核验结论；即使你调用了工具，数据与结论也一律由执行节点产出，你的产出只含模型、边界与验收标准。' },
-{ id: 'agent-2', code: 'A-02', name: 'Audit-02 静态代码审计', shortName: '审计', role: '注入漏洞、越权与竞态排查', icon: '🔍', color: '#F59E0B',
-systemPrompt: '你是 Audit-02 静态代码审计智能体。请深度排查目标逻辑中的路径遍历、注入风险、竞态条件与未授权访问漏洞。【省Token协议】只输出问题清单：每条含编号、级别、位置、问题一句话、修法一句话；禁止复述被审计代码全文。' },
-{ id: 'agent-3', code: 'P-03', name: 'Patch-03 加固补丁研发', shortName: '补丁', role: '零信任沙箱与防御代码编写', icon: '🔒', color: '#6366F1',
-systemPrompt: '你是 Patch-03 安全加固研发智能体。请针对上游发现的所有安全隐患，编写带白名单校验、最小权限控制与异常隔离的加固代码。【省Token协议】完整代码只在本节点输出一次且用代码块包裹；说明文字从简，不要在代码块之外重复粘贴代码。' },
-{ id: 'agent-4', code: 'X-04', name: 'Chaos-04 混沌与回归验证', shortName: '混沌', role: '极端并发、畸形输入与逃逸测试', icon: '⚡', color: '#10B981',
-systemPrompt: '你是 Chaos-04 混沌压测智能体。请编写针对性的边界测试用例、并发重入压测断言与安全合规检查表。【省Token协议】只输出测试清单与断言要点，禁止复述被测代码。' },
-{ id: 'agent-5', code: 'C-05', name: 'Cert-05 合规签发中枢', shortName: '签发', role: '安全审计报告与最终修复版汇总', icon: '📜', color: '#EC4899',
-systemPrompt: '你是 Cert-05 合规签发智能体。请汇总所有漏洞修复记录、最终安全代码与合规审计结论，输出完整交付报告。【省Token协议】禁止凭摘要重写或复述上游代码；（数据保真协议）最终结论中的每个数字、限额与事实都必须能在上游产出或系统原始证据中逐字找到；上游标注为未确认、MISSING 或未找到的，必须原样保留为未确认，禁止用常识或推测补全；上游互相矛盾时必须明确指出矛盾并以原始证据为准，不得自行调和；最终交付中的完整代码用单独一行 [[ATTACH_CODE:agent-3]] 引用，系统会自动附上 Patch-03 的代码原文，你只需写结论、要点、安全清单落实情况与使用说明；仅当安全清单含 P0 且必须改代码时，才亲自输出修正后的完整代码且不使用引用标记。' }
-],
-product: [
-{ id: 'agent-1', code: 'P-01', name: 'PM-01 产品战略总控', shortName: '产品', role: '用户痛点拆解与 MVP 核心功能定义', icon: '🧭', color: '#06B6D4',
-systemPrompt: '你是 PM-01 产品战略总控。请明确目标用户画像、核心痛点、MVP 功能矩阵与核心差异化壁垒。【职责约束】你只负责产品定义与功能矩阵，禁止输出完整代码实现，代码由原型节点编写。（禁回填）你只做产品定义与功能矩阵，禁止在产出中回填或宣布任何检索结果、数据或核验结论；即使你调用了工具，数据与结论也一律由执行节点产出，你的产出只含定义、矩阵与验收标准。' },
-{ id: 'agent-2', code: 'U-02', name: 'UX-02 交互与视觉架构', shortName: '交互', role: '核心页面流转与高转化交互设计', icon: '🎨', color: '#F59E0B',
-systemPrompt: '你是 UX-02 交互设计专家。请输出关键界面布局结构、用户首屏体验动线与零摩擦交互细节。' },
-{ id: 'agent-3', code: 'D-03', name: 'Tech-03 全栈原型实现', shortName: '原型', role: '核心业务代码与数据存储实现', icon: '💻', color: '#6366F1',
-systemPrompt: '你是 Tech-03 全栈研发专家。请根据产品与交互方案编写关键前端/后端实现代码与核心数据结构。【省Token协议】完整代码只在本节点输出一次且用代码块包裹；说明文字从简，不要在代码块之外重复粘贴代码。' },
-{ id: 'agent-4', code: 'G-04', name: 'Growth-04 定价与商业化', shortName: '商业', role: 'BYOK/订阅定价模型与获客漏斗', icon: '💰', color: '#10B981',
-systemPrompt: '你是 Growth-04 商业化增长专家。请制定精准的定价策略、付费解锁点、回本测算与冷启动推广渠道方案。【省Token协议】只输出定价与策略结论，不要复述上游代码或方案全文。' },
-{ id: 'agent-5', code: 'L-05', name: 'Launch-05 发布交付中枢', shortName: '发布', role: '完整产品白皮书与上线清单汇总', icon: '🚀', color: '#EC4899',
-systemPrompt: '你是 Launch-05 发布交付中枢。请将产品定义、交互设计、核心代码与商业化方案整合为可直接执行的上线蓝图。【省Token协议】禁止凭摘要重写或复述上游代码；（数据保真协议）最终结论中的每个数字、限额与事实都必须能在上游产出或系统原始证据中逐字找到；上游标注为未确认、MISSING 或未找到的，必须原样保留为未确认，禁止用常识或推测补全；上游互相矛盾时必须明确指出矛盾并以原始证据为准，不得自行调和；最终交付中的完整代码用单独一行 [[ATTACH_CODE:agent-3]] 引用，系统会自动附上 Tech-03 的代码原文，你只需写结论、要点、安全清单落实情况与使用说明；仅当安全清单含 P0 且必须改代码时，才亲自输出修正后的完整代码且不使用引用标记。' }
-]
-};
-/* ===== 编队管理 v15：编队独立持久化，切换不丢失 ===== */
-const SQUADS_KEY = 'nexusai_squads';
-const ACTIVE_SQUAD_KEY = 'nexusai_active_squad';
-const SQUAD_SEED_NAMES = { engineering: '💻 核心研发编队', secops: '🛡️ 深度安全审计', product: '📈 产品商业全案' };
-let squads = [];
-let activeSquadId = '';
-const agents = [];
-function defToRuntime(item) { return { ...item, enabled: item.enabled !== false, status: 'idle', output: '', latencyMs: 0, tokens: 0, cachedHit: false }; }
-function runtimeToDef(ag) { return { id: ag.id, code: ag.code, name: ag.name, shortName: ag.shortName, role: ag.role, icon: ag.icon, color: ag.color, systemPrompt: ag.systemPrompt, enabled: ag.enabled !== false }; }
-function saveSquads() { nxStore.set(SQUADS_KEY, squads); try { localStorage.setItem(ACTIVE_SQUAD_KEY, activeSquadId); } catch (e) {} }
-function persistActiveSquad() { const sq = squads.find(s => s.id === activeSquadId); if (sq) sq.agents = agents.map(runtimeToDef); saveSquads(); }
-function loadSquadIntoRuntime(sq) { agents.length = 0; (sq.agents || []).forEach(d => agents.push(defToRuntime(d))); activeSquadId = sq.id; try { inspectedAgentId = agents.length? agents[0].id: 'agent-1'; } catch (e) {} }
-function seedSquads() { return Object.keys(SQUAD_TEMPLATES).map(k => ({ id: 'sq-' + k, name: SQUAD_SEED_NAMES[k] || k, builtin: k, agents: SQUAD_TEMPLATES[k].map(d => ({ ...d, enabled: true })) })); }
-try {
-squads = nxStore.getArr(SQUADS_KEY);
-if (!squads.length) squads = seedSquads();
-let savedActive = null;
-try { savedActive = localStorage.getItem(ACTIVE_SQUAD_KEY); } catch (e) {}
-const initialSquad = squads.find(s => s.id === savedActive) || squads.find(s => s.builtin === 'engineering') || squads[0];
-loadSquadIntoRuntime(initialSquad);
-saveSquads();
-} catch (e) {
-if (!agents.length) SQUAD_TEMPLATES.engineering.forEach(d => agents.push(defToRuntime({ ...d, enabled: true })));
-}
-let isExecuting = false;
-let abortCtrl = null;
-let cumulativeTokens = 0;
-let cumulativeLatencyMs = 0;
-let inspectedAgentId = 'agent-1';
-let activePackets = [];
-const sfxState = {
-enabled: true,
-ctx: null,
-lastStreamTickMs: 0,
-lastSpiderStepMs: 0
-};
-try {
-const savedSfx = localStorage.getItem('nexusai_sfx_enabled');
-if (savedSfx !== null) sfxState.enabled = savedSfx !== '0';
-} catch (e) {}
-function ensureAudioCtx() {
-if (!sfxState.enabled) return null;
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-if (!AudioCtx) return null;
-if (!sfxState.ctx) {
-try { sfxState.ctx = new AudioCtx(); } catch (e) { return null; }
-}
-if (sfxState.ctx && sfxState.ctx.state === 'suspended') {
-try { sfxState.ctx.resume(); } catch (e) {}
-}
-return sfxState.ctx;
-}
-function playTone(freq, endFreq, durSec, type = 'sine', gainVal = 0.08, delaySec = 0) {
-const ac = ensureAudioCtx();
-if (!ac) return;
-try {
-const t0 = ac.currentTime + delaySec;
-const osc = ac.createOscillator();
-const gain = ac.createGain();
-osc.type = type;
-osc.frequency.setValueAtTime(freq, t0);
-if (endFreq && endFreq !== freq) {
-osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t0 + durSec);
-}
-gain.gain.setValueAtTime(0.0001, t0);
-gain.gain.linearRampToValueAtTime(gainVal, t0 + Math.min(0.015, durSec * 0.25));
-gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durSec);
-osc.connect(gain);
-gain.connect(ac.destination);
-osc.start(t0);
-osc.stop(t0 + durSec + 0.01);
-} catch (e) {}
-}
-const workflowSFX = {
-uiClick() {
-playTone(920, 1320, 0.045, 'triangle', 0.045, 0);
-},
-missionLaunch() {
-playTone(180, 540, 0.22, 'sawtooth', 0.05, 0);
-playTone(440, 880, 0.16, 'triangle', 0.08, 0.08);
-playTone(660, 1320, 0.24, 'sine', 0.09, 0.16);
-},
-agentStart(idx) {
-const baseFreqs = [523.25, 587.33, 659.25, 783.99, 880.0];
-const f = baseFreqs[idx % baseFreqs.length] || 587.33;
-playTone(f * 0.75, f, 0.09, 'triangle', 0.07, 0);
-playTone(f, f * 1.25, 0.14, 'sine', 0.08, 0.07);
-},
-streamTick() {
-const now = performance.now();
-if (now - sfxState.lastStreamTickMs < 92) return;
-sfxState.lastStreamTickMs = now;
-const pitch = 1750 + (Math.random() * 450);
-playTone(pitch, pitch * 0.85, 0.022, 'sine', 0.025, 0);
-},
-nodeCompleteAndCompact() {
-playTone(659.25, 659.25, 0.09, 'triangle', 0.075, 0);
-playTone(987.77, 1046.5, 0.16, 'sine', 0.085, 0.07);
-playTone(420, 190, 0.12, 'sine', 0.04, 0.12);
-},
-pipelineSuccess() {
-const notes = [523.25, 659.25, 783.99, 987.77, 1046.5];
-notes.forEach((n, i) => {
-playTone(n, n, 0.18, 'triangle', 0.085, i * 0.065);
-});
-},
-parallelFork() {
-playTone(330, 660, 0.12, 'sawtooth', 0.05, 0);
-playTone(495, 990, 0.14, 'triangle', 0.06, 0.05);
-playTone(660, 1320, 0.16, 'sine', 0.07, 0.10);
-},
-autoHealRetry() {
-playTone(440, 330, 0.11, 'sawtooth', 0.06, 0);
-playTone(330, 660, 0.16, 'triangle', 0.075, 0.11);
-},
-errorOrAbort() {
-playTone(195, 135, 0.18, 'sawtooth', 0.085, 0);
-playTone(165, 110, 0.24, 'sawtooth', 0.085, 0.15);
-},
-spiderStep(isPrimary) {
-const topoView = document.getElementById('tabViewTopology');
-if (!topoView || topoView.classList.contains('hidden')) return;
-const now = performance.now();
-if (now - sfxState.lastSpiderStepMs < 135) return;
-sfxState.lastSpiderStepMs = now;
-const base = isPrimary ? 1180 : 1560;
-playTone(base, base * 0.72, 0.018, 'triangle', 0.018, 0);
-},
-spiderZap() {
-playTone(1480, 420, 0.065, 'sawtooth', 0.04, 0);
-}
-};
-function showToast(msg) {
-const banner = document.getElementById('toastBanner');
-document.getElementById('toastText').textContent = msg;
-banner.classList.remove('hidden');
-banner.classList.add('flex');
-clearTimeout(banner._timer);
-banner._timer = setTimeout(() => {
-banner.classList.add('hidden');
-banner.classList.remove('flex');
-}, 2500);
-}
-function appendLog(tag, text, color) {
-const box = document.getElementById('busLogBox');
-if (box.children.length === 1 && box.children[0].classList.contains('text-slate-500')) {
-box.innerHTML = '';
-}
-const time = new Date().toTimeString().slice(0, 8);
-const item = document.createElement('div');
-item.className = 'border-l-2 pl-2 py-0.5 leading-snug safe-wrap overflow-hidden';
-item.style.borderColor = color || '#06B6D4';
-const safeText = String(text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-item.innerHTML = `<span class="text-cyan-400">[${time}] ${tag}</span> <span class="text-slate-200">${safeText}</span>`;
-box.prepend(item);
-}
-function syncHeaderAndMetrics() {
-const hasKey = Boolean(apiSettings.apiKey && apiSettings.apiKey.trim());
-const alertBanner = document.getElementById('apiAlertBanner');
-const island = document.getElementById('dynamicIslandBtn');
-const dot = document.getElementById('islandDot');
-const islandTxt = document.getElementById('islandText');
-const subStatus = document.getElementById('subHeaderStatus');
-if (hasKey) {
-alertBanner.classList.add('hidden');
-} else {
-alertBanner.classList.remove('hidden');
-}
-if (isExecuting) {
-island.classList.add('active-api');
-dot.className = 'w-2 h-2 rounded-full bg-cyan-400 animate-pulse-slow';
-const runningAgs = agents.filter(a => a.status === 'running');
-islandTxt.textContent = runningAgs.length > 1
-? `量子并发 (${runningAgs.map(a => a.shortName).join('+')})...`
-: runningAgs[0] ? `${runningAgs[0].shortName} 正在请求 API...` : '正在调用 API...';
-} else if (hasKey) {
-island.classList.remove('active-api');
-dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-islandTxt.textContent = `已就绪 · ${apiSettings.model}`;
-} else {
-island.classList.remove('active-api');
-dot.className = 'w-2 h-2 rounded-full bg-amber-400';
-islandTxt.textContent = '待配置模型 API';
-}
-subStatus.textContent = hasKey
-? `当前引擎: ${apiSettings.model} · Claw 全自动压缩已激活`
-: '全自动三阶压缩 · 智能路由 · 零感自愈';
-document.getElementById('headerTokens').textContent = `${cumulativeTokens} tok`;
-document.getElementById('kpiRealTokens').textContent = cumulativeTokens.toLocaleString();
-document.getElementById('kpiSavedTokens').textContent = `(省${tridentStats.tokensSavedEstimate})`;
-document.getElementById('kpiRealLatency').textContent = `${(cumulativeLatencyMs / 1000).toFixed(1)}s`;
-const enabledList = agents.filter(a => a.enabled);
-const doneList = enabledList.filter(a => a.status === 'done');
-document.getElementById('kpiDoneAgents').textContent = String(doneList.length);
-document.getElementById('kpiEnabledAgents').textContent = String(enabledList.length);
-const topoBadge = document.getElementById('topoStateBadge');
-if (topoBadge) {
-topoBadge.textContent = isExecuting ? 'QUANTUM ACTIVE' : (hasKey ? 'ONLINE' : 'STANDBY');
-}
-}
-function renderPipelineCards() {
-const container = document.getElementById('pipelineAgentCards');
-const enabledList = agents.filter(a => a.enabled);
-container.innerHTML = enabledList.map((ag, idx) => {
-let badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400">待命</span>`;
-let borderCls = 'border-slate-800/80';
-if (ag.status === 'running') {
-badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 animate-pulse-slow">● 推理中...</span>`;
-borderCls = 'border-cyan-500/70 shadow-md shadow-cyan-500/10';
-} else if (ag.status === 'done') {
-const cacheTag = ag.cachedHit ? ' · ⚡秒回' : '';
-badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✔ ${(ag.latencyMs / 1000).toFixed(1)}s · ${ag.tokens}tok${cacheTag}</span>`;
-borderCls = 'border-emerald-500/40';
-} else if (ag.status === 'error') {
-badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40">✕ 异常</span>`;
-borderCls = 'border-rose-500/50';
-}
-const safeSnippet = ag.output
-? ag.output.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 160) + (ag.output.length > 160 ? '...' : '')
-: '';
-return `
-<div data-card-agent="${ag.id}" class="w-full min-w-0 overflow-hidden glass-panel rounded-2xl p-3 border ${borderCls} cursor-pointer transition hover:border-cyan-500/50">
-<div class="flex items-center justify-between gap-2 min-w-0">
-<div class="flex items-center gap-2.5 min-w-0 flex-1">
-<div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style="background:${ag.color}20; border:1px solid ${ag.color}55;">
-${ag.icon}
-</div>
-<div class="min-w-0 flex-1">
-<div class="text-xs font-bold text-white truncate">${idx + 1}. ${ag.name}</div>
-<div class="text-[11px] text-slate-400 truncate">${ag.role}</div>
-</div>
-</div>
-<div class="shrink-0">${badge}</div>
-</div>
-${safeSnippet ? `<div class="mt-2 p-2 rounded-xl bg-slate-950/90 border border-slate-800/80 font-mono text-[11px] text-slate-300 leading-relaxed safe-wrap overflow-hidden">${safeSnippet}</div>` : ''}
-</div>
-`;
-}).join('');
-container.querySelectorAll('[data-card-agent]').forEach(card => {
-card.addEventListener('click', () => {
-openAgentModal(card.getAttribute('data-card-agent'));
-});
-});
-}
-function renderAgentSettings() {
-const container = document.getElementById('agentConfigContainer');
-container.innerHTML = agents.map((ag) => `
-<div class="glass-panel rounded-2xl p-3.5 space-y-2 border border-slate-800">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-2">
-<span class="text-lg">${ag.icon}</span>
-<div>
-<div class="text-xs font-bold text-white">${ag.name}</div>
-<div class="text-[11px] text-slate-400">${ag.role}</div>
-</div>
-</div>
-<button type="button" data-toggle-id="${ag.id}" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold ${ag.enabled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}">
-${ag.enabled ? '已启用' : '已停用'}
-</button>
-</div>
-<div>
-<label class="block text-[10px] text-slate-400 mb-1">System Prompt (真实请求时注入该角色的系统指令)：</label>
-<textarea data-prompt-id="${ag.id}" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">${ag.systemPrompt}</textarea>
-</div>
-</div>
-`).join('');
-container.querySelectorAll('[data-toggle-id]').forEach(btn => {
-btn.addEventListener('click', () => {
-const id = btn.getAttribute('data-toggle-id');
-const ag = agents.find(a => a.id === id);
-if (!ag) return;
-if (ag.enabled && agents.filter(a => a.enabled).length <= 1) {
-showToast('至少需保留 1 个启用的智能体');
-return;
-}
-ag.enabled = !ag.enabled;
-persistActiveSquad();
-renderAgentSettings();
-renderPipelineCards();
-syncHeaderAndMetrics();
-});
-});
-container.querySelectorAll('[data-prompt-id]').forEach(area => {
-area.addEventListener('change', () => {
-const id = area.getAttribute('data-prompt-id');
-const ag = agents.find(a => a.id === id);
-if (ag) {
-ag.systemPrompt = area.value.trim();
-persistActiveSquad();
-showToast(`已更新 ${ag.shortName} 的系统提示词`);
-}
-});
-});
-}
-async function requestLLM({ systemPrompt, userPrompt, onStreamUpdate, signal }) {
-const endpoint = apiSettings.baseUrl.trim();
-const key = apiSettings.apiKey.trim();
-const model = apiSettings.model.trim();
-if (!key) {
-throw new Error('未填写 API Key，请先在「API设置」中配置密钥');
-}
-const finalUserPrompt = `${userPrompt}\n\n<system-reminder>\n请严格遵守当前角色职责，直接输出专业、完整、可落地的架构、代码或审计结论，禁止使用空洞套话。\n</system-reminder>`;
-const cacheKey = fnv1aFingerprint(`${model}|${systemPrompt}|${finalUserPrompt}`);
-if (promptCacheStore.has(cacheKey)) {
-const hit = promptCacheStore.get(cacheKey);
-if (Date.now() - hit.ts < 300000) {
-if (onStreamUpdate) onStreamUpdate(hit.content);
-return { content: hit.content, latencyMs: 10, tokens: hit.tokens, cachedHit: true };
-}
-}
-const startTime = performance.now();
-const useStream = Boolean(apiSettings.stream && onStreamUpdate);
-const isAnthropic = isAnthropicNativeEndpoint(endpoint);
-let headers = { 'Content-Type': 'application/json' };
-let bodyPayload = {};
-if (isAnthropic) {
-headers['x-api-key'] = key;
-headers['anthropic-version'] = '2023-06-01';
-headers['anthropic-dangerous-direct-browser-access'] = 'true';
-bodyPayload = {
-model,
-max_tokens: 4096,
-system: systemPrompt,
-stream: useStream,
-messages: [{ role: 'user', content: finalUserPrompt }]
-};
-if (!isReasoningModel(model)) {
-bodyPayload.temperature = Number(apiSettings.temperature) || 0.3;
-}
-} else {
-headers['Authorization'] = `Bearer ${key}`;
-bodyPayload = {
-model,
-stream: useStream,
-messages: [
-{ role: 'system', content: systemPrompt },
-{ role: 'user', content: finalUserPrompt }
-]
-};
-if (!isReasoningModel(model)) {
-bodyPayload.temperature = Number(apiSettings.temperature) || 0.3;
-}
-if (usesMaxCompletionTokens(model)) {
-bodyPayload.max_completion_tokens = 4096;
-}
-}
-const response = await fetch(endpoint, {
-method: 'POST',
-headers,
-body: JSON.stringify(bodyPayload),
-signal
-});
-if (!response.ok) {
-let errMsg = `HTTP ${response.status}`;
-try {
-const errData = await response.json();
-errMsg = errData?.error?.message || JSON.stringify(errData);
-} catch (e) {
-try { errMsg = await response.text(); } catch (_) {}
-}
-throw new Error(errMsg);
-}
-if (useStream && response.body && typeof response.body.getReader === 'function') {
-const reader = response.body.getReader();
-const decoder = new TextDecoder('utf-8');
-let answerContent = '';
-let reasoningContent = '';
-let fullContent = '';
-let streamTokens = 0;
-let streamError = '';
-let buffer = '';
-const processLine = (raw) => {
-const line = raw.trim();
-if (!line || !line.startsWith('data:')) return;
-const payload = line.slice(5).trim();
-if (payload === '[DONE]') return;
-try {
-const parsed = JSON.parse(payload);
-if (parsed?.error?.message) { streamError = parsed.error.message; return; }
-if (parsed?.usage?.total_tokens) { streamTokens = parsed.usage.total_tokens; }
-const cDelta = parsed?.choices?.[0]?.delta?.content || parsed?.delta?.text || '';
-const rDelta = parsed?.choices?.[0]?.delta?.reasoning_content || '';
-if (cDelta || rDelta) {
-if (cDelta) answerContent += cDelta;
-if (rDelta) reasoningContent += rDelta;
-fullContent = reasoningContent ? (`<analysis>\n${reasoningContent}\n</analysis>\n\n` + answerContent) : answerContent;
-workflowSFX.streamTick();
-onStreamUpdate(fullContent);
-}
-} catch (_) {}
-};
-while (true) {
-const { done, value } = await reader.read();
-if (done) {
-buffer += decoder.decode();
-if (buffer.trim()) buffer.split('\n').forEach(processLine);
-break;
-}
-buffer += decoder.decode(value, { stream: true });
-const lines = buffer.split('\n');
-buffer = lines.pop() || '';
-for (const raw of lines) processLine(raw);
-}
-if (!fullContent && streamError) throw new Error(streamError);
-const elapsed = Math.round(performance.now() - startTime);
-const estTokens = streamTokens || Math.max(1, Math.ceil((systemPrompt.length + finalUserPrompt.length + fullContent.length) / 3));
-if (fullContent) {
-promptCacheStore.set(cacheKey, { content: fullContent, tokens: estTokens, ts: Date.now() });
-}
-return { content: fullContent, latencyMs: elapsed, tokens: estTokens, cachedHit: false };
-}
-const data = await response.json();
-const content = data?.choices?.[0]?.message?.content || data?.content?.[0]?.text || '';
-if (onStreamUpdate) onStreamUpdate(content);
-const elapsed = Math.round(performance.now() - startTime);
-const tokens =
-data?.usage?.total_tokens ||
-((data?.usage?.input_tokens || 0) + (data?.usage?.output_tokens || 0)) ||
-Math.max(1, Math.ceil((systemPrompt.length + finalUserPrompt.length + content.length) / 3));
-if (content) {
-promptCacheStore.set(cacheKey, { content, tokens, ts: Date.now() });
-}
-return { content, latencyMs: elapsed, tokens, cachedHit: false };
-}
-function spawnRealPacket(fromId, toId, color) {
-activePackets.push({ fromId, toId, progress: 0, speed: 0.022 + Math.random() * 0.01, color: color || '#06B6D4', trail: [] });
-}
-function extractCodeBlocks(text) {
-const blocks = [];
-const re = /```[^\n]*\n[\s\S]*?```/g;
-let m;
-const src = String(text || '');
-while ((m = re.exec(src)) !== null) blocks.push(m[0]);
-return blocks;
-}
-function resolveAttachMarkers(text) {
-return String(text || '').replace(/\[\[ATTACH_CODE:(agent-\d+)\]\]/g, (whole, agentId) => {
-const stored = artifactStore[agentId];
-if (!stored) return whole;
-const blocks = extractCodeBlocks(stored);
-const payload = blocks.length ? blocks.join('\n\n') : stored;
-const srcAgent = agents.find(a => a.id === agentId);
-const srcName = srcAgent ? srcAgent.name : agentId;
-return '\n\n---\n📎 附：最终代码（由系统按引用自动附上 ' + srcName + ' 的原文，未经改写）\n\n' + payload + '\n';
-});
-}
-/* ===== 引擎层 ENGINE：上下文构建 / 压缩 / 证据保真 ===== */
-function buildAutoClawContext(taskText, completedAgents, forAgentId) {
-// 省Token v2 分层预算: 直属上游给足预算; 更早节点只留 700 字摘要; 代码由 compressUpstreamOutput 原样传递。
-let compacted = `${COMPACT_CONTINUATION_PREAMBLE}\n【用户原始任务】：\n${taskText}\n`;
-let lastCodeAgent = null;
-completedAgents.forEach((ag, index) => {
-const isImmediatePrev = index === completedAgents.length - 1;
-if (/```/.test(ag.output || '') && (!lastCodeAgent || ag.id === 'agent-3')) lastCodeAgent = ag;
-const charBudget = isImmediatePrev ? Math.max(apiSettings.compactMaxChars * 2, 6000) : 700;
-const comp = compressUpstreamOutput(ag.output, charBudget);
-compacted += `\n--- [上游 ${ag.name} ${isImmediatePrev ? '完整产出' : '核心摘要'}] ---\n${comp.summary}\n`;
-});
-if (forAgentId && forAgentId === pipelineFinalAgentId && typeof evidenceStore !== 'undefined' && evidenceStore.length) {
-let evBudget = 16000;
-compacted += '\n' + LIB_LB + '原始证据' + LIB_RB + '（工具调用与网页抓取的原文。最终结论中的每个数字必须与此处逐字一致；此处没有的数字不得写入结论）\n';
-for (const ev of evidenceStore) {
-if (evBudget <= 0) break;
-const t = ev.text.length > 8000 ? ev.text.slice(0, 8000) + '\n...[单条证据过长已截断]...' : ev.text;
-if (t.length > evBudget) break;
-compacted += '--- [' + ev.kind + '] ' + ev.label + ' ---\n' + t + '\n';
-evBudget -= t.length;
-}
-}
-if (lastCodeAgent && forAgentId && forAgentId === pipelineFinalAgentId) {
-compacted += `\n【产物引用】${lastCodeAgent.name} 的代码原文已由系统存档。整合交付时用单独一行 [[ATTACH_CODE:${lastCodeAgent.id}]] 引用即可，系统会自动附上原文，禁止凭摘要重写代码。\n`;
-}
-if (prefetchedPages.length) {
-compacted += '\n【联网抓取 · 任务页面预抓】\n' + prefetchedPages.map(p => '--- ' + p.url + ' ---\n' + p.text).join('\n') + '\n';
-}
-if (kitesurfConfigured()) {
-compacted += '\n【联网抓取】如需读取某个具体网页的正文，在产出中单独一行写 [[FETCH:完整网址]]，系统会用 Kitesurf 渲染该页并把正文替换到标记处；不要凭空编造页面内容。\n';
-}
-compacted += buildLibraryContext(forAgentId);
-compacted += `\n${COMPACT_DIRECT_RESUME_INSTRUCTION}`;
-return compacted;
-}
-/* ===== 工具层 TOOLS：统一注册表与分发（加新工具 = 加一个适配器，不动引擎） ===== */
-const TOOL_LOOP_MAX_ROUNDS = 2;
-const toolAdapters = [
-{ id: 'fetch', test: (t) => /\[\[FETCH:[^\]]+\]\]/.test(t), resolve: (t, agentId) => resolveFetchMarkers(t) },
-{ id: 'skill', test: (t) => /\[\[SKILL:[^\]]+\]\]/.test(t), resolve: (t, agentId) => resolveSkillMarkers(t, agentId) },
-{ id: 'mcp', test: (t) => t.indexOf('[[MCP:') >= 0, resolve: (t, agentId) => resolveMcpMarkers(t, agentId) }
-];
-async function runToolResolvers(text, agentId) {
-let out = String(text || '');
-let used = false;
-for (const ad of toolAdapters) {
-if (ad.test(out)) { used = true; out = await ad.resolve(out, agentId); }
-}
-return { text: out, used };
-}
-function stripToolMarkers(text) {
-return String(text || '').replace(/\[\[FETCH:[^\]]+\]\]/g, '（最终交付节点不执行抓取）').replace(/\[\[SKILL:[^\]]+\]\]/g, '（最终交付节点不加载技能）').replace(/\[\[MCP:[\s\S]+?\]\]/g, '（最终交付节点不调用工具）');
-}
-async function executeSingleAgentNode(ag, hubId, promptForAgent) {
-ag.status = 'running';
-const agIdx = Math.max(0, agents.findIndex(x => x.id === ag.id));
-workflowSFX.agentStart(agIdx);
-renderPipelineCards();
-syncHeaderAndMetrics();
-spawnRealPacket(hubId, ag.id, ag.color);
-appendLog('CLAW_CALL', `${ag.name} 正在请求 ${apiSettings.model}...`, ag.color);
-const pktTimer = setInterval(() => {
-if (ag.status === 'running') {
-spawnRealPacket(hubId, ag.id, ag.color);
-}
-}, 700);
-try {
-let res;
-try {
-res = await requestLLM({
-systemPrompt: ag.systemPrompt,
-userPrompt: promptForAgent,
-signal: abortCtrl.signal,
-onStreamUpdate: (partial) => {
-ag.output = partial;
-renderPipelineCards();
-if (inspectedAgentId === ag.id && !document.getElementById('agentInspectorModal').classList.contains('hidden')) {
-document.getElementById('modalAgOutput').textContent = partial;
-}
-}
-});
-} catch (firstErr) {
-if (firstErr.name === 'AbortError') throw firstErr;
-workflowSFX.autoHealRetry();
-appendLog('AUTO_HEAL', `触发 Claw 自动恢复配方：正在重试 ${ag.shortName}...`, '#F59E0B');
-res = await requestLLM({
-systemPrompt: ag.systemPrompt,
-userPrompt: promptForAgent,
-signal: abortCtrl.signal,
-onStreamUpdate: (partial) => {
-ag.output = partial;
-renderPipelineCards();
-if (inspectedAgentId === ag.id && !document.getElementById('agentInspectorModal').classList.contains('hidden')) {
-document.getElementById('modalAgOutput').textContent = partial;
-}
-}
-});
-}
-ag.output = res.content;
-artifactStore[ag.id] = res.content;
-ag.output = (ag.id === pipelineFinalAgentId) ? resolveAttachMarkers(ag.output) : ag.output.replace(/\[\[ATTACH_CODE:agent-\d+\]\]/g, '(代码原文见原节点报告)');
-let extraTokens = 0;
-let extraLatency = 0;
-if (ag.id !== pipelineFinalAgentId) {
-let toolPass = await runToolResolvers(ag.output, ag.id);
-ag.output = toolPass.text;
-let toolRound = 0;
-while (toolPass.used && toolRound < TOOL_LOOP_MAX_ROUNDS && ag.id !== 'agent-1') {
-toolRound++;
-appendLog('TOOL_LOOP', ag.name + ' 已收到工具结果，结合结果继续产出（第 ' + toolRound + ' 轮）', ag.color);
-const prevToolOutput = ag.output;
-try {
-const contPrompt = '【工具结果已返回】你上一版产出中调用的工具已经执行完毕，结果已替换到对应标记处。带结果的完整产出如下：\n\n' + ag.output + '\n\n请基于这些真实结果，给出你本节点的最终版产出：完整替换上一版，真正使用结果中的数据与出处，不要再写等待结果、即将检索之类的话。如确有必要可以再调用工具，但不要重复调用同一个工具或同一个网址。';
-const contRes = await requestLLM({
-systemPrompt: ag.systemPrompt,
-userPrompt: contPrompt,
-signal: abortCtrl.signal,
-onStreamUpdate: (partial) => {
-ag.output = partial;
-renderPipelineCards();
-if (inspectedAgentId === ag.id && !document.getElementById('agentInspectorModal').classList.contains('hidden')) {
-document.getElementById('modalAgOutput').textContent = partial;
-}
-}
-});
-extraTokens += contRes.tokens;
-extraLatency += contRes.latencyMs;
-ag.output = contRes.content;
-artifactStore[ag.id] = contRes.content;
-ag.output = ag.output.replace(/\[\[ATTACH_CODE:agent-\d+\]\]/g, '(代码原文见原节点报告)');
-toolPass = await runToolResolvers(ag.output, ag.id);
-ag.output = toolPass.text;
-} catch (loopErr) {
-if (loopErr.name === 'AbortError') throw loopErr;
-ag.output = prevToolOutput;
-appendLog('TOOL_LOOP', ag.name + ' 工具循环续写失败，保留上一版产出：' + loopErr.message, '#F59E0B');
-break;
-}
-}
-} else {
-ag.output = stripToolMarkers(ag.output);
-}
-clearInterval(pktTimer);
-ag.status = 'done';
-ag.latencyMs = res.latencyMs + extraLatency;
-ag.tokens = res.tokens + extraTokens;
-ag.cachedHit = Boolean(res.cachedHit);
-cumulativeTokens += ag.tokens;
-cumulativeLatencyMs += ag.latencyMs;
-if (ag.output) {
-const comp = compressUpstreamOutput(ag.output, apiSettings.compactMaxChars);
-tridentStats.originalChars += comp.originalChars;
-tridentStats.compressedChars += comp.compressedChars;
-const savedChars = Math.max(0, comp.originalChars - comp.compressedChars);
-tridentStats.tokensSavedEstimate += Math.round(savedChars / 3);
-}
-if (inspectedAgentId === ag.id && !document.getElementById('agentInspectorModal').classList.contains('hidden')) {
-document.getElementById('modalAgOutput').textContent = ag.output;
-}
-workflowSFX.nodeCompleteAndCompact();
-spawnRealPacket(ag.id, hubId, '#10B981');
-appendLog(
-res.cachedHit ? 'FNV_HIT' : 'DONE',
-`${ag.name} 完成 (${(ag.latencyMs / 1000).toFixed(1)}s · ${ag.tokens} tok)`,
-'#10B981'
-);
-renderPipelineCards();
-syncHeaderAndMetrics();
-return true;
-} catch (err) {
-clearInterval(pktTimer);
-if (err.name === 'AbortError') {
-ag.status = 'idle';
-workflowSFX.errorOrAbort();
-appendLog('ABORT', `已手动中止 ${ag.name}`, '#F59E0B');
-} else {
-ag.status = 'error';
-ag.output = `【API 调用失败】：${err.message}`;
-workflowSFX.errorOrAbort();
-appendLog('ERROR', `${ag.name} 报错：${err.message}`, '#EF4444');
-showToast(`调用失败：${err.message}`);
-}
-renderPipelineCards();
-syncHeaderAndMetrics();
-return false;
-}
-}
-async function startRealPipeline() {
-const taskText = document.getElementById('missionTextarea').value.trim();
-if (!taskText) {
-showToast('请先输入要执行的真实任务内容');
-document.getElementById('missionTextarea').focus();
-return;
-}
-const { routes, blocked } = autoRouteTask(taskText);
-if (blocked) {
-workflowSFX.errorOrAbort();
-appendLog('SANDBOX', 'Claw 安全沙箱已自动拦截高危系统指令', '#EF4444');
-showToast('安全沙箱拦截：检测到破坏性指令');
-return;
-}
-if (!apiSettings.apiKey.trim()) {
-showToast('请先在「API设置」中填写 API Key');
-switchNavTab('settings');
-document.getElementById('cfgApiKey').focus();
-return;
-}
-await prefetchMcpTools();
-// Kitesurf 预抓：任务文本中的网址先抓回来，注入全线上下文与证据池
-prefetchedPages = [];
-Object.keys(kitesurfCache).forEach(k => delete kitesurfCache[k]);
-kitesurfFetchCount = 0;
-if (kitesurfConfigured()) {
-const taskUrls = extractUrls(taskText).slice(0, 3);
-for (const u of taskUrls) {
-try {
-const page = await fetchPageViaKitesurf(u);
-if (page) { prefetchedPages.push({ url: u, text: page}); recordEvidence('FETCH', u, page); appendLog('KITESURF', '已抓取任务页面：' + u + '（' + page.length + ' 字）', '#22D3EE');}
-} catch (e) {
-appendLog('KITESURF', '抓取 ' + u + ' 失败：' + e.message + '（已跳过，不影响运行）', '#F59E0B');
-}
-}
-} else if (extractUrls(taskText).length) {
-appendLog('KITESURF', '任务含网址但未配置 Cloudflare 凭证，智能体将看不到页面内容（可在 API设置 中填入）', '#F59E0B');
-}
-const mode = document.getElementById('execModeSelect').value;
-let runList = agents.filter(a => a.enabled);
-if (mode === 'fast' && runList.length > 3) {
-runList = runList.slice(0, 3);
-}
-agents.forEach(a => {
-a.status = 'idle';
-a.output = '';
-a.latencyMs = 0;
-a.tokens = 0;
-a.cachedHit = false;
-});
-tridentStats.tokensSavedEstimate = 0;
-tridentStats.originalChars = 0;
-tridentStats.compressedChars = 0;
-Object.keys(artifactStore).forEach(k => delete artifactStore[k]);
-isExecuting = true;
-abortCtrl = new AbortController();
-document.getElementById('runMissionBtn').classList.add('hidden');
-document.getElementById('abortMissionBtn').classList.remove('hidden');
-renderPipelineCards();
-syncHeaderAndMetrics();
-workflowSFX.missionLaunch();
-appendLog('CLAW_AUTO', `已自动挂载 [${routes.join(' + ')}] 路由与 Trident 省Token引擎 v3（代码原样传递 · 清单审计 · 运行时拼装 · 压成本调优）`, '#06B6D4');
-const hubId = runList[0].id;
-pipelineFinalAgentId = runList.length ? runList[runList.length - 1].id : null;
-const completedAgents = [];
-if (mode === 'parallel_fork' && runList.length >= 3) {
-const coordPrompt = `请针对以下用户任务，输出清晰的全局拆解方案与各子模块分工：\n\n${taskText}` + buildLibraryContext(runList[0].id);
-const ok0 = await executeSingleAgentNode(runList[0], hubId, coordPrompt);
-if (ok0 && isExecuting) {
-completedAgents.push(runList[0]);
-const middleAgents = runList.slice(1, runList.length - 1);
-const finalAgent = runList[runList.length - 1];
-workflowSFX.parallelFork();
-appendLog('FORK', `自动并发调度子智能体：${middleAgents.map(a => a.shortName).join(' + ')}`, '#8B5CF6');
-const sharedAfterCoord = buildAutoClawContext(taskText, completedAgents, null);
-await Promise.all(
-middleAgents.map(ag => {
-const p = `以下是用户原始任务及总控拆解方案，请以你的专业身份（${ag.name} - ${ag.role}）并行输出核心交付成果：\n\n${sharedAfterCoord}`;
-return executeSingleAgentNode(ag, hubId, p).then(ok => {
-if (ok) completedAgents.push(ag);
-});
-})
-);
-completedAgents.sort((a, b) => runList.indexOf(a) - runList.indexOf(b));
-if (isExecuting && finalAgent) {
-const finalContext = buildAutoClawContext(taskText, completedAgents, finalAgent ? finalAgent.id : null);
-const finalPrompt = `以下是用户原始任务及各并行智能体已完成的产出，请以你的专业身份（${finalAgent.name}）整合为完整的最终落地蓝图：\n\n${finalContext}`;
-await executeSingleAgentNode(finalAgent, hubId, finalPrompt);
-}
-}
-} else {
-for (let i = 0; i < runList.length; i++) {
-if (!isExecuting) break;
-const ag = runList[i];
-const upstreamCtx = buildAutoClawContext(taskText, completedAgents, ag.id);
-const promptForAgent = i === 0
-? `请针对以下用户任务，输出清晰的全局拆解方案与核心技术路线：\n\n${taskText}` + buildLibraryContext(ag.id)
-: `以下是用户原始任务及上游智能体核心产出（已由 Claw-Code Trident 引擎自动压缩去噪），请以你的专业身份（${ag.name} - ${ag.role}）继续推进并输出核心交付成果：\n\n${upstreamCtx}`;
-const ok = await executeSingleAgentNode(ag, hubId, promptForAgent);
-if (!ok) break;
-completedAgents.push(ag);
-}
-}
-if (completedAgents.length > 0 && isExecuting) { workflowSFX.pipelineSuccess(); }
-isExecuting = false;
-abortCtrl = null;
-document.getElementById('abortMissionBtn').classList.add('hidden');
-document.getElementById('runMissionBtn').classList.remove('hidden');
-syncHeaderAndMetrics();
-}
-const canvas = document.getElementById('stageCanvas');
-const ctx = canvas.getContext('2d');
-let cw = 380;
-let ch = 640;
-let tick = 0;
-let fullImmersionMode = false;
+        <!-- Library Sub-tab: MCP -->
+        <div id="libPaneMcp" class="cyber-panel stack hidden">
+          <h3 class="panel-title">🔌 MCP 服务器（Streamable HTTP）</h3>
+          <div id="libMcpList" class="stack-sm"></div>
+          <hr class="divider">
+          <div class="stack-sm">
+            <input id="libMcpName" type="text" class="field-input" placeholder="服务器名（智能体用 [[MCP:服务器名:工具名:{参数}]] 调用）">
+            <input id="libMcpUrl" type="text" class="field-input mono" placeholder="服务器地址（https://...，Streamable HTTP 类 MCP）">
+            <input id="libMcpToken" type="password" class="field-input mono" placeholder="访问令牌（可选，仅存本机浏览器）">
+            <div class="field-group">
+              <span class="field-label">分配给</span>
+              <div id="libMcpAgents" class="row-wrap"></div>
+            </div>
+            <input id="libMcpEditId" type="hidden">
+            <div class="row">
+              <button id="libMcpSaveBtn" type="button" class="btn btn-primary btn-block">💾 保存服务器</button>
+              <button id="libMcpTestBtn" type="button" class="btn btn-ghost btn-block">🔌 测试连接</button>
+              <button id="libMcpCancelBtn" type="button" class="btn btn-muted btn-sm hidden">取消</button>
+            </div>
+            <p class="panel-subtitle">经 hghub-proxy 的 /mcp 中继转发；本机 stdio 型 MCP 网页端无法直连。</p>
+            <p id="libMcpMsg" class="panel-subtitle safe-wrap"></p>
+          </div>
+        </div>
 
-const AGENT_WORKFLOW_KEYWORDS = [
-  ['任务意图解析', '/plan 架构拆解', '核心模块边界', 'Claw 路由分配', 'Token 预算设定', '子智能体调度', '系统拓扑建模', '接口契约对齐'],
-  ['GrepTool 检索', '技术选型对比', '延迟基准测算', '算法复杂度分析', '行业方案对标', '依赖兼容核验', '吞吐瓶颈定位', '协议开销评估'],
-  ['FileEditTool 编码', '核心数据结构', '异步协程实现', 'Redis Lua 脚本', '零拷贝缓冲区', '接口异常处理', '核心模块封装', '类型安全校验'],
-  ['/security 审计', '并发竞态排查', '注入漏洞扫描', '白名单沙箱加固', '高并发压测断言', '内存泄漏检测', '异常熔断兜底', '零信任权限校验'],
-  ['Trident 三阶压缩', 'FNV-1a 指纹缓存', '上游摘要去噪', 'claw.report.v1', '全局蓝图整合', 'Token 省流审计', 'Markdown 导出', '最终交付签发']
-];
+        <!-- Library Sub-tab: Instructions -->
+        <div id="libPaneInst" class="cyber-panel stack hidden">
+          <h3 class="panel-title">📜 共享指令（Instructions）</h3>
+          <div id="libInstList" class="stack-sm"></div>
+          <hr class="divider">
+          <div class="stack-sm">
+            <input id="libInstName" type="text" class="field-input" placeholder="指令名（如：团队代码风格）">
+            <textarea id="libInstText" rows="4" class="field-textarea" placeholder="指令正文：将原样注入被分配智能体的上下文"></textarea>
+            <div class="field-group">
+              <span class="field-label">分配给</span>
+              <div id="libInstAgents" class="row-wrap"></div>
+            </div>
+            <input id="libInstEditId" type="hidden">
+            <div class="row">
+              <button id="libInstSaveBtn" type="button" class="btn btn-primary btn-block">💾 保存指令</button>
+              <button id="libInstCancelBtn" type="button" class="btn btn-muted btn-sm hidden">取消</button>
+            </div>
+          </div>
+        </div>
 
-const planeSlotCoords = [
-  { rx: 0.22, ry: 0.36 },
-  { rx: 0.52, ry: 0.33 },
-  { rx: 0.80, ry: 0.38 },
-  { rx: 0.24, ry: 0.73 },
-  { rx: 0.54, ry: 0.75 },
-  { rx: 0.80, ry: 0.71 }
-];
+        <!-- Library Sub-tab: Import / Export -->
+        <div id="libPaneIo" class="cyber-panel stack hidden">
+          <h3 class="panel-title">⇄ 扩展库与编队备份</h3>
+          <p class="panel-subtitle">一键导出或导入全部技能、MCP 服务器、共享指令与智能体编队（不含 API Key）。</p>
+          <div class="row">
+            <button id="libExportBtn" type="button" class="btn btn-ghost btn-block">⬆️ 生成导出 JSON</button>
+            <button id="libImportBtn" type="button" class="btn btn-muted btn-block">⬇️ 准备导入</button>
+          </div>
+          <textarea id="libIoText" rows="7" class="field-textarea mono" placeholder="导出时 JSON 会出现在这里；导入时把 JSON 粘贴到这里"></textarea>
+          <div class="row">
+            <button id="libIoDoImportBtn" type="button" class="btn btn-primary btn-block">执行合并导入</button>
+            <button id="libIoCopyBtn" type="button" class="btn btn-ghost btn-block">复制 JSON</button>
+          </div>
+        </div>
+      </section>
+    </main>
 
-function extractLiveKeywordsFromOutput(ag, fallbackIdx) {
-  const pool = [...(AGENT_WORKFLOW_KEYWORDS[fallbackIdx % AGENT_WORKFLOW_KEYWORDS.length] || AGENT_WORKFLOW_KEYWORDS[0])];
-  if (ag && ag.output) {
-    const cleaned = ag.output.replace(/[#*`>-]/g, ' ');
-    const matches = cleaned.match(/[A-Za-z0-9_/.:-]{3,14}|[一-龥]{3,8}/g) || [];
-    matches.slice(0, 10).forEach(m => {
-      if (!pool.includes(m)) pool.unshift(m);
-    });
-  }
-  return pool;
-}
+    <!-- ===== Bottom iOS Sci-Fi Navigation Dock ===== -->
+    <nav id="bottomNavBar" class="ios-dock" aria-label="主导航">
+      <button type="button" data-nav="workspace" class="dock-btn">
+        <span class="dock-icon">⚡</span>
+        <span class="dock-label">工作台</span>
+      </button>
+      <button type="button" data-nav="topology" class="dock-btn active">
+        <span class="dock-icon">🛸</span>
+        <span class="dock-label">全息拓扑</span>
+      </button>
+      <button type="button" data-nav="agents" class="dock-btn">
+        <span class="dock-icon">🤖</span>
+        <span class="dock-label">编队</span>
+      </button>
+      <button type="button" data-nav="settings" class="dock-btn">
+        <span class="dock-icon">⚙️</span>
+        <span class="dock-label">API设置</span>
+      </button>
+      <button type="button" data-nav="library" class="dock-btn">
+        <span class="dock-icon">📚</span>
+        <span class="dock-label">扩展库</span>
+      </button>
+    </nav>
+  </div>
 
-function createSpiderForPlane(scale, color) {
-  return {
-    rx: 0.52,
-    ry: 0.33,
-    angle: 0,
-    targetSlot: 1,
-    currentSlot: 0,
-    waitTicks: 0,
-    scale,
-    color,
-    legPhase: Math.random() * 6.28
-  };
-}
+  <!-- ===== Modal: Agent Inspector & Direct Chat ===== -->
+  <div id="agentInspectorModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="row flex-1">
+          <span id="modalAgIcon" style="font-size: 20px;">🧠</span>
+          <div class="flex-1">
+            <h3 id="modalAgName" class="panel-title truncate">Nexus-01 架构总控</h3>
+            <p id="modalAgRole" class="panel-subtitle truncate" style="margin-top: 1px;">全局任务拆解与技术纲要</p>
+          </div>
+        </div>
+        <div class="row" style="gap: 6px;">
+          <button id="copyAgOutBtn" type="button" class="btn btn-ghost btn-xs">复制产出</button>
+          <button id="closeAgModalBtn" type="button" class="btn btn-muted btn-xs" aria-label="关闭">✕</button>
+        </div>
+      </div>
+      <div id="modalAgOutput" class="modal-terminal safe-wrap"></div>
+      <form id="directChatForm" class="row">
+        <input id="directChatInput" type="text" required class="field-input flex-1" placeholder="向该 Agent 追问或发送单独指令 (真实调用API)...">
+        <button id="directChatSubmitBtn" type="submit" class="btn btn-primary btn-sm">发送</button>
+      </form>
+    </div>
+  </div>
 
-let agentPlanes = [];
+  <!-- ===== Modal: Combined Report ===== -->
+  <div id="reportModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="panel-title truncate flex-1">📑 多智能体交付汇总报告</h3>
+        <div class="row" style="gap: 5px;">
+          <button id="copyReportBtn" type="button" class="btn btn-ghost btn-xs">复制</button>
+          <button id="downloadReportBtn" type="button" class="btn btn-cyan btn-xs">.md</button>
+          <button id="downloadJsonReportBtn" type="button" class="btn btn-violet-soft btn-xs">.json</button>
+          <button id="closeReportModalBtn" type="button" class="btn btn-muted btn-xs" aria-label="关闭">✕</button>
+        </div>
+      </div>
+      <div id="reportModalContent" class="modal-terminal safe-wrap"></div>
+    </div>
+  </div>
 
-function buildFiveAgentPlanes() {
-  const enabled = agents.filter(a => a.enabled);
-  const list = enabled.length > 0 ? enabled : agents.slice(0, 5);
-  agentPlanes = list.map((ag, pIdx) => {
-    const kwPool = extractLiveKeywordsFromOutput(ag, pIdx);
-    const slips = planeSlotCoords.map((slot, sIdx) => ({
-      slotIdx: sIdx,
-      baseRx: slot.rx,
-      baseRy: slot.ry,
-      rx: slot.rx,
-      ry: slot.ry,
-      floatOffsetY: 0,
-      text: kwPool[sIdx % kwPool.length],
-      stepped: sIdx < 2,
-      activeNow: sIdx === 1,
-      scale: sIdx === 1 ? 1.35 : (sIdx < 2 ? 1.12 : 0.95),
-      targetScale: sIdx === 1 ? 1.35 : (sIdx < 2 ? 1.12 : 0.95),
-      pulse: sIdx === 1 ? 1.0 : 0,
-      phase: pIdx * 1.3 + sIdx * 0.9,
-      box: { x: 0, y: 0, w: 72, h: 22 }
-    }));
-    return {
-      pIdx,
-      agent: ag,
-      kwCursor: 6,
-      rect: { x: 0, y: 0, w: 160, h: 120 },
-      detailBtnRect: { x: 0, y: 0, w: 44, h: 20 },
-      slips,
-      webChain: [0, 1],
-      spider: createSpiderForPlane(1.0, ag.color)
-    };
-  });
-}
+  <!-- ===== Modal: Squad Prompt / Confirm ===== -->
+  <div id="squadModal" class="modal-backdrop centered hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <h3 id="squadModalTitle" class="panel-title"></h3>
+      <p id="squadModalText" class="panel-subtitle hidden"></p>
+      <input id="squadModalInput" type="text" class="field-input">
+      <div class="row">
+        <button id="squadModalCancel" type="button" class="btn btn-muted btn-block">取消</button>
+        <button id="squadModalOk" type="button" class="btn btn-primary btn-block">确定</button>
+      </div>
+    </div>
+  </div>
 
-buildFiveAgentPlanes();
+  <!-- ===== Modal: Add New Agent ===== -->
+  <div id="newAgentModal" class="modal-backdrop centered hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="panel-title">＋ 新增专职智能体节点</h3>
+        <button id="closeNewAgentModalBtn" type="button" class="btn btn-muted btn-xs" aria-label="关闭">✕</button>
+      </div>
+      <form id="newAgentForm" class="stack">
+        <div class="field-group">
+          <label class="field-label" for="addAgName">智能体名称</label>
+          <input id="addAgName" type="text" required class="field-input" placeholder="例如：Product-06 产品专家">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="addAgRole">职责描述</label>
+          <input id="addAgRole" type="text" required class="field-input" placeholder="例如：交互体验与商业化方案设计">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="addAgPrompt">System Prompt (系统提示词)</label>
+          <textarea id="addAgPrompt" rows="3" required class="field-textarea" placeholder="你是资深产品总监，请基于上游结论输出用户体验流程与商业化闭环方案..."></textarea>
+        </div>
+        <div class="row" style="justify-content: flex-end;">
+          <button id="cancelNewAgentBtn" type="button" class="btn btn-muted btn-sm">取消</button>
+          <button type="submit" class="btn btn-primary btn-sm">添加节点</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-function layoutFivePlanes() {
-  const n = agentPlanes.length;
-  if (n === 0) return;
-  const padX = 2;
-  const padY = 2;
-  const gapX = 5;
-  const gapY = 5;
-  const isWide = cw >= 680;
-  if (isWide && n === 5) {
-    const topH = (ch - padY * 2 - gapY) * 0.52;
-    const botH = (ch - padY * 2 - gapY) * 0.48;
-    const w3 = (cw - padX * 2 - gapX * 2) / 3;
-    const w2 = (cw - padX * 2 - gapX) / 2;
-    for (let i = 0; i < 3; i++) {
-      agentPlanes[i].rect = { x: padX + i * (w3 + gapX), y: padY, w: w3, h: topH };
-    }
-    for (let i = 3; i < 5; i++) {
-      agentPlanes[i].rect = { x: padX + (i - 3) * (w2 + gapX), y: padY + topH + gapY, w: w2, h: botH };
-    }
-  } else {
-    const rows = Math.ceil(n / 2);
-    const cellH = (ch - padY * 2 - gapY * (rows - 1)) / rows;
-    const halfW = (cw - padX * 2 - gapX) / 2;
-    const fullW = cw - padX * 2;
-    agentPlanes.forEach((pl, idx) => {
-      const r = Math.floor(idx / 2);
-      const isLastOdd = (idx === n - 1) && (n % 2 === 1);
-      const c = idx % 2;
-      pl.rect = {
-        x: isLastOdd ? padX : padX + c * (halfW + gapX),
-        y: padY + r * (cellH + gapY),
-        w: isLastOdd ? fullW : halfW,
-        h: cellH
-      };
-    });
-  }
-}
+  <!-- ===== Floating Toast ===== -->
+  <div id="toastBanner" class="toast-banner hidden" role="status" aria-live="polite">
+    <span class="toast-icon">✦</span>
+    <span id="toastText">已保存</span>
+  </div>
 
-function resizeStageCanvas() {
-  const wrap = document.getElementById('stageCanvasWrap');
-  if (!wrap) return;
-  const rect = wrap.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) return;
-  const dpr = window.devicePixelRatio || 1;
-  cw = rect.width;
-  ch = rect.height;
-  canvas.width = cw * dpr;
-  canvas.height = ch * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  layoutFivePlanes();
-}
-
-function stepOnSlip(plane, slipIdx, playAudio = false) {
-  const slip = plane.slips[slipIdx];
-  if (!slip) return;
-  plane.slips.forEach((s, idx) => {
-    if (idx === slipIdx) {
-      s.stepped = true;
-      s.activeNow = true;
-      s.targetScale = 1.36;
-      s.pulse = 1.0;
-    } else {
-      s.activeNow = false;
-      s.targetScale = s.stepped ? 1.10 : 0.94;
-    }
-  });
-  if (!plane.webChain.includes(slipIdx)) {
-    plane.webChain.push(slipIdx);
-    if (plane.webChain.length > 5) plane.webChain.shift();
-  }
-  if (playAudio) workflowSFX.spiderStep(true);
-}
-
-function floatNewKeywordOnPlane(plane) {
-  const kwPool = extractLiveKeywordsFromOutput(plane.agent, plane.pIdx);
-  plane.kwCursor = (plane.kwCursor + 1) % kwPool.length;
-  const nextWord = kwPool[plane.kwCursor];
-  const candidateIdx = (plane.spider.targetSlot + 1 + Math.floor(Math.random() * 4)) % plane.slips.length;
-  const targetSlip = plane.slips[candidateIdx];
-  if (targetSlip && !targetSlip.activeNow) {
-    targetSlip.text = nextWord;
-    targetSlip.stepped = false;
-    targetSlip.targetScale = 0.95;
-    targetSlip.pulse = 0.6;
-    targetSlip.floatOffsetY = 0.09;
-  }
-  return candidateIdx;
-}
-
-function drawSpiderOnSlip(cx, cy, angle, legPhase, color, activeSlipBox, isSteppingOnBox) {
-  ctx.save();
-  for (let side = -1; side <= 1; side += 2) {
-    for (let l = 0; l < 4; l++) {
-      const spread = (l - 1.5) * 0.38;
-      const wave = isSteppingOnBox ? Math.sin(legPhase * 0.3 + l) * 0.05 : Math.sin(legPhase + l * 1.5 + (side > 0 ? Math.PI : 0)) * 0.28;
-      const a = angle + side * (Math.PI * 0.48 + spread * side) + wave;
-      const shX = cx + Math.cos(angle + side * Math.PI * 0.5) * 4;
-      const shY = cy + Math.sin(angle + side * Math.PI * 0.5) * 4;
-      let footX = cx + Math.cos(a) * (15 + (l === 0 || l === 3 ? 4 : 0));
-      let footY = cy + Math.sin(a) * (15 + (l === 0 || l === 3 ? 4 : 0));
-
-      if (isSteppingOnBox && activeSlipBox) {
-        const bx = activeSlipBox.x + ((l + 0.5) / 4) * activeSlipBox.w * 0.45 * side + activeSlipBox.w * 0.5;
-        const by = side < 0 ? activeSlipBox.y + 1 : activeSlipBox.y + activeSlipBox.h - 1;
-        footX = footX * 0.35 + bx * 0.65;
-        footY = footY * 0.35 + by * 0.65;
-      }
-
-      const midX = (shX + footX) * 0.5;
-      const midY = (shY + footY) * 0.5;
-      const kneeX = midX + side * 4;
-      const kneeY = midY - 6.5;
-
-      ctx.strokeStyle = '#F8FAFC';
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 6;
-      ctx.lineWidth = 1.45;
-      ctx.beginPath();
-      ctx.moveTo(shX, shY);
-      ctx.lineTo(kneeX, kneeY);
-      ctx.lineTo(footX, footY);
-      ctx.stroke();
-
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(kneeX, kneeY, 1.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = isSteppingOnBox ? '#FACC15' : color;
-      ctx.beginPath();
-      ctx.arc(footX, footY, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  ctx.translate(cx, cy);
-  ctx.rotate(angle);
-  ctx.fillStyle = '#0F172A';
-  ctx.strokeStyle = color;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 10;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.ellipse(-4, 0, 5.6, 4.0, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(3, 0, 2.9, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(4.6, -1.1, 0.85, 0, Math.PI * 2);
-  ctx.arc(4.6, 1.1, 0.85, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function renderTopologyLoop() {
-  const topoSec = document.getElementById('tabViewTopology');
-  if (document.hidden || (topoSec && topoSec.classList.contains('hidden'))) {
-    requestAnimationFrame(renderTopologyLoop);
-    return;
-  }
-  tick++;
-  const enabledNow = agents.filter(a => a.enabled);
-  const planesMismatch = enabledNow.length !== agentPlanes.length || enabledNow.some((ag, i) => !agentPlanes[i] || agentPlanes[i].agent !== ag);
-  if (planesMismatch && enabledNow.length > 0) {
-    buildFiveAgentPlanes();
-    layoutFivePlanes();
-  }
-
-  ctx.fillStyle = '#04060D';
-  ctx.fillRect(0, 0, cw, ch);
-
-  agentPlanes.forEach((plane, pIdx) => {
-    const { x, y, w, h } = plane.rect;
-    const ag = plane.agent;
-    const isRunning = ag.status === 'running';
-    const isDone = ag.status === 'done';
-    const themeColor = ag.color || '#06B6D4';
-
-    ctx.save();
-    const bgGrad = ctx.createLinearGradient(x, y, x, y + h);
-    bgGrad.addColorStop(0, isRunning ? `${themeColor}1F` : '#090F1E');
-    bgGrad.addColorStop(1, '#050811');
-    ctx.fillStyle = bgGrad;
-    ctx.strokeStyle = isRunning ? themeColor : `${themeColor}66`;
-    ctx.lineWidth = isRunning ? 2.0 : 1.1;
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(x, y, w, h, 9);
-    else ctx.rect(x, y, w, h);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.06)';
-    ctx.lineWidth = 0.7;
-    for (let gx = 1; gx < 4; gx++) {
-      ctx.beginPath();
-      ctx.moveTo(x + (w * gx) / 4, y + 24);
-      ctx.lineTo(x + (w * gx) / 4, y + h);
-      ctx.stroke();
-    }
-    for (let gy = 1; gy < 3; gy++) {
-      ctx.beginPath();
-      ctx.moveTo(x, y + 24 + ((h - 24) * gy) / 3);
-      ctx.lineTo(x + w, y + 24 + ((h - 24) * gy) / 3);
-      ctx.stroke();
-    }
-
-    const hdrH = 24;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-    ctx.fillRect(x + 1, y + 1, w - 2, hdrH);
-    ctx.strokeStyle = `${themeColor}44`;
-    ctx.beginPath();
-    ctx.moveTo(x + 1, y + hdrH);
-    ctx.lineTo(x + w - 1, y + hdrH);
-    ctx.stroke();
-
-    ctx.font = '700 10.5px Inter, -apple-system, sans-serif';
-    ctx.fillStyle = '#F8FAFC';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`${ag.icon} ${ag.name}`, x + 7, y + hdrH * 0.52);
-
-    const btnW = 38;
-    const btnH = 16;
-    const btnX = x + w - btnW - 5;
-    const btnY = y + (hdrH - btnH) * 0.5;
-    plane.detailBtnRect = { x: btnX, y: btnY, w: btnW, h: btnH };
-    ctx.fillStyle = isRunning ? themeColor : 'rgba(30, 41, 59, 0.9)';
-    ctx.strokeStyle = themeColor;
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(btnX, btnY, btnW, btnH, 4);
-    else ctx.rect(btnX, btnY, btnW, btnH);
-    ctx.fill();
-    ctx.stroke();
-    ctx.font = '600 9px Inter, sans-serif';
-    ctx.fillStyle = isRunning ? '#020617' : '#E2E8F0';
-    ctx.textAlign = 'center';
-    ctx.fillText(isRunning ? '执行中' : isDone ? '✔完成' : '详情 ›', btnX + btnW * 0.5, btnY + btnH * 0.52);
-    ctx.restore();
-
-    plane.slips.forEach((slip) => {
-      const floatX = Math.sin(tick * 0.025 + slip.phase) * 0.018;
-      const floatY = Math.cos(tick * 0.022 + slip.phase * 1.3) * 0.022;
-      if (slip.floatOffsetY) slip.floatOffsetY *= 0.91;
-      slip.rx = slip.baseRx + floatX;
-      slip.ry = slip.baseRy + floatY + (slip.floatOffsetY || 0);
-      slip.scale += (slip.targetScale - slip.scale) * 0.16;
-      if (slip.pulse > 0) slip.pulse = Math.max(0, slip.pulse - 0.025);
-    });
-
-    if (plane.webChain.length > 1) {
-      ctx.save();
-      for (let i = 1; i < plane.webChain.length; i++) {
-        const sA = plane.slips[plane.webChain[i - 1]];
-        const sB = plane.slips[plane.webChain[i]];
-        if (!sA || !sB) continue;
-        const x1 = x + sA.rx * w;
-        const y1 = y + sA.ry * h;
-        const x2 = x + sB.rx * w;
-        const y2 = y + sB.ry * h;
-        ctx.strokeStyle = themeColor;
-        ctx.globalAlpha = 0.55;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-
-        ctx.setLineDash([3, 5]);
-        ctx.lineDashOffset = -tick * 0.8;
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.globalAlpha = 0.75;
-        ctx.lineWidth = 0.85;
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-      ctx.restore();
-    }
-
-    plane.slips.forEach((slip) => {
-      const sx = x + slip.rx * w;
-      const sy = y + slip.ry * h;
-      const sc = slip.scale;
-      const isAct = slip.activeNow;
-      const isStep = slip.stepped;
-
-      ctx.save();
-      ctx.translate(sx, sy);
-      ctx.scale(sc, sc);
-
-      const fontSize = cw < 440 ? 9.5 : 10.5;
-      ctx.font = `${isAct || isStep ? '700' : '500'} ${fontSize}px Inter, -apple-system, sans-serif`;
-      const textW = ctx.measureText(slip.text).width;
-      const padH = isAct ? 12 : 9;
-      const bw = Math.min(w * 0.45, Math.max(50, textW + padH * 2));
-      const bh = isAct ? 21 : 18;
-
-      slip.box = {
-        x: sx - (bw * sc) * 0.5,
-        y: sy - (bh * sc) * 0.5,
-        w: bw * sc,
-        h: bh * sc
-      };
-
-      if (slip.pulse > 0.02) {
-        const ringPad = (1 - slip.pulse) * 13;
-        ctx.strokeStyle = themeColor;
-        ctx.globalAlpha = slip.pulse * 0.85;
-        ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(-bw * 0.5 - ringPad, -bh * 0.5 - ringPad * 0.6, bw + ringPad * 2, bh + ringPad * 1.2, 6);
-        else ctx.rect(-bw * 0.5 - ringPad, -bh * 0.5 - ringPad * 0.6, bw + ringPad * 2, bh + ringPad * 1.2);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(-bw * 0.5, -bh * 0.5, bw, bh, 5);
-      else ctx.rect(-bw * 0.5, -bh * 0.5, bw, bh);
-
-      if (isAct) {
-        ctx.fillStyle = themeColor;
-        ctx.shadowColor = themeColor;
-        ctx.shadowBlur = 14;
-        ctx.fill();
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      } else if (isStep) {
-        ctx.fillStyle = `${themeColor}38`;
-        ctx.shadowColor = themeColor;
-        ctx.shadowBlur = 6;
-        ctx.fill();
-        ctx.strokeStyle = themeColor;
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-      } else {
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(100, 116, 139, 0.45)';
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-      }
-
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = isAct ? '#020617' : isStep ? '#FFFFFF' : '#94A3B8';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(slip.text, 0, 0.5);
-      ctx.restore();
-    });
-
-    const sp = plane.spider;
-    const targetSlip = plane.slips[sp.targetSlot] || plane.slips[0];
-    const tx = targetSlip.rx;
-    const ty = targetSlip.ry - 0.055;
-    const dx = tx - sp.rx;
-    const dy = ty - sp.ry;
-    const dist = Math.hypot(dx, dy);
-
-    let isPerched = false;
-    if (dist < 0.025) {
-      isPerched = true;
-      sp.rx = tx;
-      sp.ry = ty;
-      if (!targetSlip.activeNow) {
-        stepOnSlip(plane, sp.targetSlot, isRunning);
-      }
-      sp.waitTicks++;
-      const holdLimit = isRunning ? 26 : 58 + (pIdx * 11);
-      if (sp.waitTicks >= holdLimit) {
-        sp.waitTicks = 0;
-        const nextSlot = floatNewKeywordOnPlane(plane);
-        sp.currentSlot = sp.targetSlot;
-        sp.targetSlot = nextSlot;
-      }
-    } else {
-      const moveSpd = isRunning ? 0.022 : 0.012;
-      sp.angle = Math.atan2(dy * h, dx * w);
-      sp.rx += (dx / dist) * Math.min(moveSpd, dist);
-      sp.ry += (dy / dist) * Math.min(moveSpd, dist);
-      sp.legPhase += 0.42;
-    }
-
-    const spScreenX = x + sp.rx * w;
-    const spScreenY = y + sp.ry * h;
-    drawSpiderOnSlip(spScreenX, spScreenY, isPerched ? 0 : sp.angle, sp.legPhase, themeColor, targetSlip.box, isPerched);
-  });
-
-  requestAnimationFrame(renderTopologyLoop);
-}
-
-function handleTopologyTap(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
-  const px = clientX - rect.left;
-  const py = clientY - rect.top;
-
-  for (const plane of agentPlanes) {
-    const r = plane.rect;
-    if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) {
-      const db = plane.detailBtnRect;
-      if (px >= db.x - 4 && px <= db.x + db.w + 4 && py >= db.y - 4 && py <= db.y + db.h + 4) {
-        openAgentModal(plane.agent.id);
-        return;
-      }
-      let bestSlipIdx = -1;
-      let bestDist = 9999;
-      plane.slips.forEach((slip, sIdx) => {
-        const b = slip.box;
-        const cx = b.x + b.w * 0.5;
-        const cy = b.y + b.h * 0.5;
-        const d = Math.hypot(px - cx, py - cy);
-        if (d < bestDist) {
-          bestDist = d;
-          bestSlipIdx = sIdx;
-        }
-      });
-      if (bestSlipIdx >= 0) {
-        workflowSFX.spiderZap();
-        plane.spider.targetSlot = bestSlipIdx;
-        plane.spider.waitTicks = 0;
-        stepOnSlip(plane, bestSlipIdx, true);
-      }
-      return;
-    }
-  }
-}
-
-canvas.addEventListener('click', (e) => {
-  handleTopologyTap(e.clientX, e.clientY);
-});
-function openAgentModal(agentId) {
-const ag = agents.find(a => a.id === agentId);
-if (!ag) return;
-inspectedAgentId = ag.id;
-document.getElementById('modalAgIcon').textContent = ag.icon;
-document.getElementById('modalAgName').textContent = ag.name;
-document.getElementById('modalAgRole').textContent = ag.role;
-document.getElementById('modalAgOutput').textContent =
-ag.output || '该智能体当前处于待命状态，尚无输出。\n\n您可以在「协同工作台」启动全局任务，或直接在下方输入框向该 Agent 发送真实指令。';
-const modal = document.getElementById('agentInspectorModal');
-modal.classList.remove('hidden');
-modal.classList.add('flex');
-}
-function closeAgentModal() {
-const modal = document.getElementById('agentInspectorModal');
-modal.classList.add('hidden');
-modal.classList.remove('flex');
-}
-document.getElementById('closeAgModalBtn').addEventListener('click', closeAgentModal);
-function copyText(text, msg) {
-if (navigator.clipboard && navigator.clipboard.writeText) {
-navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => fallbackCopyText(text, msg));
-} else {
-fallbackCopyText(text, msg);
-}
-}
-function fallbackCopyText(text, msg) {
-const ta = document.createElement('textarea');
-ta.value = text;
-ta.style.position = 'fixed';
-ta.style.opacity = '0';
-document.body.appendChild(ta);
-ta.select();
-try { document.execCommand('copy'); showToast(msg); } catch (e) {}
-document.body.removeChild(ta);
-}
-document.getElementById('copyAgOutBtn').addEventListener('click', () => {
-const ag = agents.find(a => a.id === inspectedAgentId);
-if (!ag || !ag.output) {
-showToast('暂无可复制的产出');
-return;
-}
-copyText(ag.output, `已复制 ${ag.shortName} 的产出内容`);
-});
-document.getElementById('directChatForm').addEventListener('submit', async (e) => {
-e.preventDefault();
-const inp = document.getElementById('directChatInput');
-const q = inp.value.trim();
-if (!q) return;
-if (!apiSettings.apiKey.trim()) {
-showToast('请先在「API设置」填写 API Key');
-closeAgentModal();
-switchNavTab('settings');
-return;
-}
-if (isExecuting) {
-showToast('全局流水线正在运行，请等待完成或停止后再单独追问');
-return;
-}
-const ag = agents.find(a => a.id === inspectedAgentId);
-if (!ag || ag.status === 'running') return;
-inp.value = '';
-const prevOutput = ag.output || '';
-const prefix = prevOutput ? `${prevOutput}\n\n--- [追问：${q}] ---\n` : `--- [指令：${q}] ---\n`;
-ag.status = 'running';
-renderPipelineCards();
-syncHeaderAndMetrics();
-try {
-const prompt = prevOutput
-? `你之前的输出如下：\n${prevOutput}\n\n现在用户的补充指令/追问是：\n${q}`
-: q;
-const res = await requestLLM({
-systemPrompt: ag.systemPrompt,
-userPrompt: prompt,
-onStreamUpdate: (partial) => {
-ag.output = prefix + partial;
-document.getElementById('modalAgOutput').textContent = ag.output;
-}
-});
-ag.status = 'done';
-ag.output = prefix + res.content;
-artifactStore[ag.id] = ag.output;
-ag.latencyMs += res.latencyMs;
-ag.tokens += res.tokens;
-cumulativeTokens += res.tokens;
-cumulativeLatencyMs += res.latencyMs;
-document.getElementById('modalAgOutput').textContent = ag.output;
-appendLog('DIRECT_OK', `${ag.name} 完成定向回复 (${res.tokens} tok)`, ag.color);
-} catch (err) {
-ag.status = prevOutput ? 'done' : 'error';
-ag.output = prevOutput;
-document.getElementById('modalAgOutput').textContent = `${prefix}\n[调用失败]：${err.message}`;
-}
-renderPipelineCards();
-syncHeaderAndMetrics();
-});
-function buildCombinedReport() {
-const title = document.getElementById('missionTextarea').value.trim() || '多智能体协同任务';
-const chunks = [
-`# NexusAI 多智能体真实交付报告\n\n` +
-`**任务**：${title}\n` +
-`**模型**：${apiSettings.model}\n` +
-`**总计消耗**：${cumulativeTokens} Tokens (Claw-Code 自动省流 ~${tridentStats.tokensSavedEstimate} Tokens)\n`
-];
-agents.forEach(ag => {
-if (ag.output) {
-chunks.push(`## ${ag.icon} ${ag.name} (${ag.role})\n\n${ag.output}\n`);
-}
-});
-if (chunks.length === 1) {
-return '暂无产出记录。请先配置 API Key 并在工作台启动真实任务。';
-}
-return chunks.join('\n---\n\n');
-}
-function buildClawReportV1Json() {
-const title = document.getElementById('missionTextarea').value.trim() || '多智能体协同任务';
-return JSON.stringify({
-schema: 'claw.report.v1',
-generated_at: new Date().toISOString(),
-objective: title,
-model: apiSettings.model,
-usage: { total_tokens: cumulativeTokens, saved_tokens: tridentStats.tokensSavedEstimate, latency_ms: cumulativeLatencyMs },
-claims: agents.filter(a => a.output).map((ag, idx) => ({
-id: `claim-${idx + 1}`,
-agent: ag.name,
-role: ag.role,
-tokens: ag.tokens,
-fingerprint: fnv1aFingerprint(ag.output),
-text: ag.output
-}))
-}, null, 2);
-}
-document.getElementById('showReportModalBtn').addEventListener('click', () => {
-document.getElementById('reportModalContent').textContent = buildCombinedReport();
-const m = document.getElementById('reportModal');
-m.classList.remove('hidden');
-m.classList.add('flex');
-});
-document.getElementById('closeReportModalBtn').addEventListener('click', () => {
-const m = document.getElementById('reportModal');
-m.classList.add('hidden');
-m.classList.remove('flex');
-});
-document.getElementById('copyReportBtn').addEventListener('click', () => {
-copyText(buildCombinedReport(), '已复制完整报告全文');
-});
-document.getElementById('downloadReportBtn').addEventListener('click', () => {
-const md = buildCombinedReport();
-const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
-const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download = `NexusAI_Report_${Date.now()}.md`;
-document.body.appendChild(a);
-a.click();
-document.body.removeChild(a);
-URL.revokeObjectURL(url);
-showToast('已触发报告下载');
-});
-document.getElementById('downloadJsonReportBtn').addEventListener('click', () => {
-const jsonStr = buildClawReportV1Json();
-const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
-const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download = `NexusAI_claw_report_v1_${Date.now()}.json`;
-document.body.appendChild(a);
-a.click();
-document.body.removeChild(a);
-URL.revokeObjectURL(url);
-showToast('已导出 claw.report.v1 JSON');
-});
-function refreshAfterSquadChange() {
-buildFiveAgentPlanes();
-layoutFivePlanes();
-renderAgentSettings();
-renderPipelineCards();
-renderLibrary();
-syncHeaderAndMetrics();
-}
-function renderSquadBar() {
-const bar = document.getElementById('squadBar');
-if (!bar) return;
-bar.innerHTML = squads.map(sq => '<button type="button" data-squad-id="' + sq.id + '" class="squad-btn px-2 py-1.5 rounded-xl text-[11px] font-semibold ' + (sq.id === activeSquadId? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40': 'bg-slate-900 text-slate-300 border border-slate-800') + '">' + sq.name + '</button>').join('');
-bar.querySelectorAll('.squad-btn').forEach(btn => {
-btn.addEventListener('click', () => { try { workflowSFX.uiClick(); } catch (e) {} switchSquad(btn.getAttribute('data-squad-id')); });
-});
-}
-function switchSquad(id) {
-if (isExecuting) {
-showToast('任务执行中，请先停止任务再切换编队');
-return;
-}
-const sq = squads.find(s => s.id === id);
-if (!sq || id === activeSquadId) return;
-persistActiveSquad();
-loadSquadIntoRuntime(sq);
-saveSquads();
-renderSquadBar();
-refreshAfterSquadChange();
-showToast('已切换为「' + sq.name + '」');
-}
-let squadModalCb = null;
-function openSquadModal(opts) {
-const m = document.getElementById('squadModal');
-document.getElementById('squadModalTitle').textContent = opts.title || '';
-const txt = document.getElementById('squadModalText');
-if (opts.text) { txt.textContent = opts.text; txt.classList.remove('hidden'); } else { txt.classList.add('hidden'); }
-const inp = document.getElementById('squadModalInput');
-if (opts.input) { inp.classList.remove('hidden'); inp.value = opts.value || ''; inp.placeholder = opts.placeholder || ''; } else { inp.classList.add('hidden'); }
-document.getElementById('squadModalOk').textContent = opts.okText || '确定';
-squadModalCb = opts.onOk || null;
-m.classList.remove('hidden');
-m.classList.add('flex');
-if (opts.input) setTimeout(() => { try { inp.focus(); } catch (e) {} }, 50);
-}
-function closeSquadModal() {
-const m = document.getElementById('squadModal');
-m.classList.add('hidden');
-m.classList.remove('flex');
-squadModalCb = null;
-}
-document.getElementById('squadModalCancel').addEventListener('click', closeSquadModal);
-document.getElementById('squadModalOk').addEventListener('click', () => {
-const cb = squadModalCb;
-const v = document.getElementById('squadModalInput').value;
-closeSquadModal();
-if (cb) cb(v);
-});
-document.getElementById('newSquadBtn').addEventListener('click', () => {
-if (isExecuting) { showToast('任务执行中，请先停止任务再新建编队'); return; }
-openSquadModal({ title: '＋ 新建编队', input: true, value: '', placeholder: '编队名称（例如：猜生肖小队）', okText: '创建', onOk: (val) => {
-const name = (val || '').trim();
-if (!name) { showToast('编队名称不能为空'); return; }
-persistActiveSquad();
-const sq = { id: libUid('sq'), name: name, agents: [{ id: 'agent-1', code: 'A-01', name: '新成员-01', shortName: '成员', role: '待配置角色', icon: '🤖', color: '#3B82F6', systemPrompt: '（待配置）请把这里改成这个成员的角色、方法与输出格式。', enabled: true }] };
-squads.push(sq);
-loadSquadIntoRuntime(sq);
-saveSquads();
-renderSquadBar();
-refreshAfterSquadChange();
-showToast('已新建编队「' + name + '」：改下方卡片的提示词，或点＋新增 Agent 添加成员');
-} });
-});
-document.getElementById('dupSquadBtn').addEventListener('click', () => {
-if (isExecuting) { showToast('任务执行中，请先停止任务再复制编队'); return; }
-persistActiveSquad();
-const cur = squads.find(s => s.id === activeSquadId);
-if (!cur) return;
-const copy = { id: libUid('sq'), name: cur.name + ' 副本', agents: JSON.parse(JSON.stringify(cur.agents || [])) };
-squads.push(copy);
-loadSquadIntoRuntime(copy);
-saveSquads();
-renderSquadBar();
-refreshAfterSquadChange();
-showToast('已复制为「' + copy.name + '」');
-});
-document.getElementById('renameSquadBtn').addEventListener('click', () => {
-const cur = squads.find(s => s.id === activeSquadId);
-if (!cur) return;
-openSquadModal({ title: '重命名编队', input: true, value: cur.name, okText: '保存', onOk: (val) => {
-const name = (val || '').trim();
-if (!name || name === cur.name) return;
-cur.name = name;
-saveSquads();
-renderSquadBar();
-showToast('编队已改名为「' + name + '」');
-} });
-});
-document.getElementById('delSquadBtn').addEventListener('click', () => {
-if (isExecuting) { showToast('任务执行中，请先停止任务再删除编队'); return; }
-if (squads.length <= 1) { showToast('至少保留一个编队，不能删除'); return; }
-const cur = squads.find(s => s.id === activeSquadId);
-if (!cur) return;
-const doomedName = cur.name;
-openSquadModal({ title: '删除编队', text: '确定删除当前编队「' + doomedName + '」？该编队的成员与提示词将一并删除，此操作不可恢复。', okText: '删除', onOk: () => {
-squads = squads.filter(s => s.id !== cur.id);
-loadSquadIntoRuntime(squads[0]);
-saveSquads();
-renderSquadBar();
-refreshAfterSquadChange();
-showToast('已删除编队「' + doomedName + '」');
-} });
-});
-renderSquadBar();
-function openNewAgentModal() {
-const m = document.getElementById('newAgentModal');
-m.classList.remove('hidden');
-m.classList.add('flex');
-}
-function closeNewAgentModal() {
-const m = document.getElementById('newAgentModal');
-m.classList.add('hidden');
-m.classList.remove('flex');
-}
-document.getElementById('openNewAgentBtn').addEventListener('click', openNewAgentModal);
-document.getElementById('closeNewAgentModalBtn').addEventListener('click', closeNewAgentModal);
-document.getElementById('cancelNewAgentBtn').addEventListener('click', closeNewAgentModal);
-document.getElementById('newAgentForm').addEventListener('submit', (e) => {
-e.preventDefault();
-const name = document.getElementById('addAgName').value.trim();
-const role = document.getElementById('addAgRole').value.trim();
-const prompt = document.getElementById('addAgPrompt').value.trim();
-if (!name || !role || !prompt) return;
-const palette = ['#3B82F6', '#8B5CF6', '#14B8A6', '#F43F5E'];
-const icons = ['🚀', '🧬', '🛰️', '🔮'];
-const usedNums = agents.map(a => { const m = /(\d+)$/.exec(a.id || ''); return m? parseInt(m[1], 10): 0; });
-const nextNum = (usedNums.length? Math.max.apply(null, usedNums): 0) + 1;
-agents.push({
-id: 'agent-' + nextNum,
-code: 'A-' + String(nextNum).padStart(2, '0'),
-name,
-shortName: name.slice(0, 4),
-role,
-icon: icons[(nextNum - 1) % icons.length],
-color: palette[(nextNum - 1) % palette.length],
-enabled: true,
-status: 'idle',
-output: '',
-latencyMs: 0,
-tokens: 0,
-cachedHit: false,
-systemPrompt: prompt
-});
-persistActiveSquad();
-document.getElementById('newAgentForm').reset();
-closeNewAgentModal();
-buildFiveAgentPlanes();
-layoutFivePlanes();
-renderAgentSettings();
-renderPipelineCards();
-renderLibrary();
-syncHeaderAndMetrics();
-showToast(`已添加智能体：${name}`);
-});
-function switchNavTab(tab) {
-const views = {
-workspace: document.getElementById('tabViewWorkspace'),
-topology: document.getElementById('tabViewTopology'),
-agents: document.getElementById('tabViewAgents'),
-settings: document.getElementById('tabViewSettings'),
-library: document.getElementById('tabViewLibrary')
-};
-Object.keys(views).forEach(k => {
-if (k === tab) views[k].classList.remove('hidden');
-else views[k].classList.add('hidden');
-});
-document.querySelectorAll('.nav-tab-btn').forEach(btn => {
-if (btn.getAttribute('data-nav') === tab) {
-btn.className = 'nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-cyan-400';
-} else {
-btn.className = 'nav-tab-btn flex flex-col items-center justify-center py-1 px-3 text-slate-400 hover:text-slate-200';
-}
-});
-const hdr = document.getElementById('mainAppHeader');
-if (tab === 'topology') {
-if (hdr) hdr.classList.add('hidden');
-setTimeout(resizeStageCanvas, 30);
-} else {
-if (hdr) hdr.classList.remove('hidden');
-}
-}
-document.querySelectorAll('.nav-tab-btn').forEach(btn => {
-btn.addEventListener('click', () => switchNavTab(btn.getAttribute('data-nav')));
-});
-document.getElementById('topConfigApiBtn').addEventListener('click', () => switchNavTab('settings'));
-document.getElementById('dynamicIslandBtn').addEventListener('click', () => switchNavTab('settings'));
-document.getElementById('bannerConfigBtn').addEventListener('click', () => switchNavTab('settings'));
-document.querySelectorAll('.preset-btn').forEach(btn => {
-btn.addEventListener('click', () => {
-const key = btn.getAttribute('data-preset');
-const p = PROVIDER_PRESETS[key];
-if (!p) return;
-document.getElementById('cfgBaseUrl').value = p.baseUrl;
-document.getElementById('cfgModel').value = p.model;
-document.querySelectorAll('.preset-btn').forEach(b => {
-b.className = 'preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 text-left';
-});
-btn.className = 'preset-btn px-2.5 py-2 rounded-xl text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-left';
-showToast(`已切换为 ${p.name} 预设`);
-});
-});
-function saveApiCfg() {
-apiSettings.baseUrl = document.getElementById('cfgBaseUrl').value.trim();
-apiSettings.apiKey = document.getElementById('cfgApiKey').value.trim();
-apiSettings.model = document.getElementById('cfgModel').value.trim();
-apiSettings.temperature = parseFloat(document.getElementById('cfgTemp').value) || 0.3;
-apiSettings.stream = document.getElementById('cfgStream').checked;
-apiSettings.cfAccountId = document.getElementById('cfgCfAccountId').value.trim();
-apiSettings.cfToken = document.getElementById('cfgCfToken').value.trim();
-try {
-localStorage.setItem('nexusai_ios_real_cfg', JSON.stringify(apiSettings));
-} catch (e) {}
-syncHeaderAndMetrics();
-}
-document.getElementById('saveCfgBtn').addEventListener('click', () => {
-saveApiCfg();
-showToast('API 配置已保存');
-});
-document.getElementById('testCfgBtn').addEventListener('click', async () => {
-saveApiCfg();
-const banner = document.getElementById('testResultBanner');
-banner.classList.remove('hidden');
-banner.className = 'rounded-xl p-3 text-xs font-mono leading-relaxed border border-cyan-500/40 bg-cyan-500/10 text-cyan-200';
-banner.textContent = `正在向 ${apiSettings.baseUrl} 发送真实连通性测试...`;
-try {
-const res = await requestLLM({
-systemPrompt: 'You are a concise assistant.',
-userPrompt: '请简短回复：NexusAI 真实 API 连通正常！'
-});
-banner.className = 'rounded-xl p-3 text-xs font-mono leading-relaxed border border-emerald-500/40 bg-emerald-500/10 text-emerald-200';
-banner.textContent = `✔ 连通成功！耗时 ${res.latencyMs}ms · 消耗 ${res.tokens} tokens\n回复：${res.content}`;
-appendLog('API_TEST', `连通性测试通过 (${res.latencyMs}ms)`, '#10B981');
-showToast('API 连通测试成功！');
-} catch (err) {
-banner.className = 'rounded-xl p-3 text-xs font-mono leading-relaxed border border-rose-500/40 bg-rose-500/10 text-rose-200';
-banner.textContent = `✕ 连接失败：${err.message}`;
-appendLog('API_ERR', `连通测试失败：${err.message}`, '#EF4444');
-}
-});
-document.getElementById('sampleTaskSelect').addEventListener('change', (e) => {
-if (e.target.value) {
-document.getElementById('missionTextarea').value = e.target.value;
-e.target.value = '';
-}
-});
-document.getElementById('runMissionBtn').addEventListener('click', startRealPipeline);
-document.getElementById('abortMissionBtn').addEventListener('click', () => {
-if (abortCtrl) abortCtrl.abort();
-isExecuting = false;
-document.getElementById('abortMissionBtn').classList.add('hidden');
-document.getElementById('runMissionBtn').classList.remove('hidden');
-syncHeaderAndMetrics();
-});
-const sfxBtn = document.getElementById('sfxToggleBtn');
-function syncSfxBtnUI() {
-if (!sfxBtn) return;
-if (sfxState.enabled) {
-sfxBtn.textContent = '🔊 音效';
-sfxBtn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/35 transition';
-} else {
-sfxBtn.textContent = '🔇 静音';
-sfxBtn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 transition';
-}
-}
-syncSfxBtnUI();
-sfxBtn.addEventListener('click', () => {
-sfxState.enabled = !sfxState.enabled;
-try { localStorage.setItem('nexusai_sfx_enabled', sfxState.enabled ? '1' : '0'); } catch (e) {}
-syncSfxBtnUI();
-if (sfxState.enabled) {
-workflowSFX.nodeCompleteAndCompact();
-showToast('已开启工作流实时音效');
-} else {
-showToast('已切换为静音模式');
-}
-});
-document.addEventListener('pointerdown', () => { ensureAudioCtx(); }, { once: true, passive: true });
-document.querySelectorAll('.nav-tab-btn, .squad-btn, .preset-btn').forEach(b => {
-b.addEventListener('click', () => workflowSFX.uiClick());
-});
-document.getElementById('clearLogBtn').addEventListener('click', () => {
-document.getElementById('busLogBox').innerHTML = '<div class="text-slate-500 text-[11px]">日志已清空。等待真实 API 调用...</div>';
-});
-window.addEventListener('resize', resizeStageCanvas);
-if (typeof ResizeObserver !== 'undefined') {
-const ro = new ResizeObserver(() => resizeStageCanvas());
-const wrapEl = document.getElementById('stageCanvasWrap');
-if (wrapEl) ro.observe(wrapEl);
-}
-function initNexusApp() {
-if (initNexusApp._done) return;
-initNexusApp._done = true;
-document.getElementById('cfgBaseUrl').value = apiSettings.baseUrl;
-document.getElementById('cfgApiKey').value = apiSettings.apiKey;
-document.getElementById('cfgModel').value = apiSettings.model;
-document.getElementById('cfgTemp').value = String(apiSettings.temperature);
-document.getElementById('cfgStream').checked = apiSettings.stream;
-document.getElementById('cfgCfAccountId').value = apiSettings.cfAccountId || '';
-document.getElementById('cfgCfToken').value = apiSettings.cfToken || '';
-const updateClock = () => {
-document.getElementById('iosClock').textContent = new Date().toTimeString().slice(0, 5);
-};
-updateClock();
-setInterval(updateClock, 30000);
-document.getElementById('spawnSlipBurstBtn').addEventListener('click', () => {
-  workflowSFX.parallelFork();
-  agentPlanes.forEach((pl) => {
-    const nextIdx = floatNewKeywordOnPlane(pl);
-    pl.spider.targetSlot = nextIdx;
-    pl.spider.waitTicks = 0;
-  });
-  showToast('🕷️ 已飘出新工作流字条');
-});
-document.getElementById('toggleFullImmersionBtn').addEventListener('click', () => {
-  fullImmersionMode = !fullImmersionMode;
-  const topoSec = document.getElementById('tabViewTopology');
-  const navBar = document.getElementById('bottomNavBar');
-  const btn = document.getElementById('toggleFullImmersionBtn');
-  if (fullImmersionMode) {
-    topoSec.classList.remove('bottom-[48px]');
-    topoSec.classList.add('bottom-0');
-    navBar.classList.add('hidden');
-    btn.textContent = '⛶ 退出全屏';
-  } else {
-    topoSec.classList.remove('bottom-0');
-    topoSec.classList.add('bottom-[48px]');
-    navBar.classList.remove('hidden');
-    btn.textContent = '⛶ 全屏';
-  }
-  setTimeout(resizeStageCanvas, 30);
-});
-renderPipelineCards();
-renderAgentSettings();
-renderLibrary();
-bindLibraryUI();
-syncHeaderAndMetrics();
-switchNavTab('topology');
-resizeStageCanvas();
-renderTopologyLoop();
-const resetHorizontalScroll = () => {
-  if (window.scrollX !== 0) window.scrollTo(0, window.scrollY);
-  if (document.documentElement.scrollLeft !== 0) document.documentElement.scrollLeft = 0;
-  if (document.body.scrollLeft !== 0) document.body.scrollLeft = 0;
-};
-window.addEventListener('scroll', resetHorizontalScroll, { passive: true });
-document.addEventListener('focusout', () => setTimeout(resetHorizontalScroll, 60));
-}
-if (document.readyState === 'loading') {
-document.addEventListener('DOMContentLoaded', initNexusApp);
-} else {
-initNexusApp();
-}
-window.addEventListener('load', initNexusApp);
-</script>
-  <script>
-    // PWA Service Worker registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-      });
-    }
-  </script>
+  <!-- ===== Layered Modular Scripts (Ordered Classic Scripts: Zero Build, GitHub Pages & file:// Ready) ===== -->
+  <script src="js/store.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/transport.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/topology.js"></script>
+  <script src="js/ui.js"></script>
 </body>
 </html>

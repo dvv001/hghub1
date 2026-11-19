@@ -1,1 +1,32 @@
-{"background_color":"#060911","description":"iOS 多智能体真实协同中枢：真实大模型 API 驱动的多 Agent 流水线、拓扑可视化与交付报告。","display":"standalone","icons":[{"purpose":"any","sizes":"any","src":"icon.svg","type":"image/svg+xml"},{"purpose":"maskable","sizes":"any","src":"icon.svg","type":"image/svg+xml"}],"lang":"zh-CN","name":"NexusAI — 多智能体真实协同中枢","orientation":"portrait","scope":".","short_name":"NexusAI","start_url":".","theme_color":"#060911"}
+{
+  "name": "NexusAI — 量子多智能体协同中枢",
+  "short_name": "NexusAI",
+  "description": "iOS 鲜艳科幻多智能体协同中枢：真实大模型 API 流水线、全息机械蛛拓扑、扩展库与交付报告。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050314",
+  "theme_color": "#050314",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
