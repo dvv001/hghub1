@@ -1,5 +1,5 @@
-// NexusAI v20 PWA Service Worker — Layered App Shell + GitHub Network-First Cache
-const CACHE_NAME = 'nexusai-v20';
+// NexusAI v21 PWA Service Worker (glass skin) — Layered App Shell + GitHub Network-First Cache
+const CACHE_NAME = 'nexusai-v21';
 const APP_SHELL = [
   './',
   './index.html',
