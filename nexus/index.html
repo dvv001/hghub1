@@ -339,6 +339,7 @@ box-shadow: 0 0 18px rgba(6, 182, 212, 0.35);
 <p class="text-[11px] font-semibold text-slate-300 mb-1">分配给</p>
 <div id="libSkillAgents" class="flex flex-wrap gap-2"></div>
 </div>
+<label class="flex items-center gap-2 text-[11px] text-slate-300"><input id="libSkillForce" type="checkbox" class="accent-cyan-500"> 必加载：全文直接注入被分配的智能体，不等它主动调用（适合必须照章执行的规程）</label>
 <input id="libSkillEditId" type="hidden">
 <div class="flex gap-2">
 <button id="libSkillSaveBtn" type="button" class="flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition">💾 保存技能</button>
@@ -637,7 +638,14 @@ let out = '';
 const insts = libInstructions.filter(i => libAssigned(i, forAgentId));
 if (insts.length) out += '\n' + LIB_LB + '共享指令' + LIB_RB + '\n' + insts.map(i => i.text).join('\n') + '\n';
 const skills = libSkills.filter(s => libAssigned(s, forAgentId));
-if (skills.length) out += '\n' + LIB_LB + '技能库' + LIB_RB + '你可按需加载以下技能：需要某个技能的规程时，在产出中单独一行写 [[SKILL:技能名]]，系统会把技能全文替换到标记处；不要凭空编造技能内容。\n' + skills.map(s => '- ' + s.name + '：' + (s.desc || '')).join('\n') + '\n';
+const forcedSkills = skills.filter(s => s.forceLoad);
+const optionalSkills = skills.filter(s => !s.forceLoad);
+for (const s of forcedSkills) {
+let fbody = s.body || '';
+if (fbody.length > SKILL_BODY_CAP) fbody = fbody.slice(0, SKILL_BODY_CAP) + '\n...（技能正文过长，已截断至 ' + SKILL_BODY_CAP + ' 字）';
+out += '\n' + LIB_LB + '必加载技能：' + s.name + LIB_RB + '（本技能已由系统全文注入，无需再写加载标记；任务涉及本技能时必须严格按此规程执行）\n' + fbody + '\n';
+}
+if (optionalSkills.length) out += '\n' + LIB_LB + '技能库' + LIB_RB + '你可按需加载以下技能：需要某个技能的规程时，在产出中单独一行写 [[SKILL:技能名]]，系统会把技能全文替换到标记处；不要凭空编造技能内容。\n' + optionalSkills.map(s => '- ' + s.name + '：' + (s.desc || '')).join('\n') + '\n';
 const toolLines = [];
 libMcpServers.filter(sv => libAssigned(sv, forAgentId)).forEach(sv => {
 (mcpToolIndex[sv.name] || []).forEach(t => toolLines.push('- ' + sv.name + ' / ' + t.name + '：' + (t.description || '')));
@@ -657,6 +665,7 @@ const sk = libSkills.find(s => s.name === name);
 let replacement;
 if (!sk || sk.enabled === false) replacement = '（技能库中没有已启用的技能「' + name + '」，已跳过）';
 else if (!libAssigned(sk, agentId)) replacement = '（技能「' + name + '」未分配给当前智能体，已跳过）';
+else if (sk.forceLoad) replacement = '（技能「' + name + '」已设为必加载，全文已注入你的上下文，无需重复加载）';
 else {
 libSkillLoads[agentId] = libSkillLoads[agentId] || 0;
 if (libSkillLoads[agentId] >= SKILL_PER_AGENT_LIMIT) replacement = '（本次运行该智能体加载技能次数已达上限，未加载「' + name + '」）';
@@ -914,7 +923,7 @@ function libItemRow(kind, item) {
 const on = item.enabled!== false;
 const desc = kind === 'inst'? String(item.text || '').slice(0, 60): (item.desc || (kind === 'mcp'? item.url: ''));
 return '<div class="flex items-start justify-between gap-2 rounded-xl bg-slate-950 border border-slate-800 px-3 py-2">'
-+ '<div class="min-w-0"><p class="text-xs font-bold text-white truncate">' + libEsc(item.name) + (on? '': ' <span class="text-slate-500 font-normal">（已停用）</span>') + '</p>'
++ '<div class="min-w-0"><p class="text-xs font-bold text-white truncate">' + libEsc(item.name) + (on? '': ' <span class="text-slate-500 font-normal">（已停用）</span>') + (kind === 'skill' && item.forceLoad? ' <span class="text-cyan-300 font-normal">· 必加载</span>': '') + '</p>'
 + '<p class="text-[11px] text-slate-400 truncate">' + libEsc(desc) + '</p>'
 + '<p class="text-[10px] text-slate-500">分配：' + libEsc(libAssignSummary(item)) + '</p></div>'
 + '<div class="flex gap-1 shrink-0">'
@@ -942,6 +951,7 @@ document.getElementById('libSkillEditId').value = item.id;
 document.getElementById('libSkillName').value = item.name || '';
 document.getElementById('libSkillDesc').value = item.desc || '';
 document.getElementById('libSkillBody').value = item.body || '';
+document.getElementById('libSkillForce').checked = !!item.forceLoad;
 libRenderAgentChecks('libSkillAgents', item.agents);
 document.getElementById('libSkillCancelBtn').classList.remove('hidden');
 } else if (kind === 'mcp') {
@@ -965,6 +975,7 @@ document.getElementById('libSkillEditId').value = '';
 document.getElementById('libSkillName').value = '';
 document.getElementById('libSkillDesc').value = '';
 document.getElementById('libSkillBody').value = '';
+document.getElementById('libSkillForce').checked = false;
 libRenderAgentChecks('libSkillAgents', ['all']);
 document.getElementById('libSkillCancelBtn').classList.add('hidden');
 } else if (kind === 'mcp') {
@@ -1006,7 +1017,7 @@ const body = document.getElementById('libSkillBody').value;
 if (!name) { showToast('技能名不能为空'); return;}
 if (!body.trim()) { showToast('技能正文不能为空'); return;}
 const editId = document.getElementById('libSkillEditId').value;
-const data = { name: name, desc: document.getElementById('libSkillDesc').value.trim(), body: body, agents: libReadAgentChecks('libSkillAgents')};
+const data = { name: name, desc: document.getElementById('libSkillDesc').value.trim(), body: body, agents: libReadAgentChecks('libSkillAgents'), forceLoad: document.getElementById('libSkillForce').checked};
 if (editId) { const it = libSkills.find(s => s.id === editId); if (it) Object.assign(it, data);}
 else libSkills.push(Object.assign({ id: libUid('sk'), enabled: true}, data));
 libSave(); libClearForm('skill'); renderLibrary(); showToast('技能已保存：' + name);
